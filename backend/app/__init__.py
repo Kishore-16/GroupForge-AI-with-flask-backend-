@@ -17,14 +17,16 @@ def create_app():
     # ===============================
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
     app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/groupforge")
+    
+    # CORS Configuration
+    app.config["CORS_HEADERS"] = "Content-Type"
 
     # ===============================
     # Initialize Extensions
     # ===============================
-    cors.init_app(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
     jwt.init_app(app)
     mongo.init_app(app)
-    CORS(app)
 
     # ===============================
     # Register Blueprints (Routes)

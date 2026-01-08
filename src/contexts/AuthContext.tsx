@@ -212,7 +212,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }
 
-    async function resetPassword(email: string) {
+    async function resetPassword(_email: string) {
         setError('Password reset is not yet implemented');
         throw new Error('Password reset is not yet implemented');
     }
@@ -255,28 +255,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         userProfile,
         loading,
         error,
-        signInWithGoogle,
-        signInWithGitHub,
-        signInWithEmail,
-        signUpWithEmail,
-        logout,
-        resetPassword,
-        refreshUserProfile,
-    };
-
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
-        console.warn('Firebase authentication has been removed from this project');
-    }
-
-    const value: AuthContextType = {
-        currentUser,
-        userProfile,
-        loading,
         signInWithGoogle,
         signInWithGitHub,
         signInWithEmail,
