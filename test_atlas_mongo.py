@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env file from parent directory
-load_dotenv(dotenv_path='../.env')
+# Load .env file from workspace root
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Get MongoDB URI from environment
 mongo_uri = os.getenv('MONGO_URI')
