@@ -1,5 +1,9 @@
 from flask import Flask
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from app.extensions import cors, jwt, mongo
 from app.routes import auth, users, resumes, assessments, teams, analytics, health
@@ -11,8 +15,8 @@ def create_app():
     # ===============================
     # Basic Configuration
     # ===============================
-    app.config["JWT_SECRET_KEY"] = "super-secret-key"  # TODO: move to env later
-    app.config["MONGO_URI"] = "mongodb://localhost:27017/groupforge"
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+    app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/groupforge")
 
     # ===============================
     # Initialize Extensions
