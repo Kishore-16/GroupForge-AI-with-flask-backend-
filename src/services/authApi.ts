@@ -143,6 +143,27 @@ class AuthApi {
 
         return response.json();
     }
+
+    /**
+     * Update user by ID (requires auth token)
+     */
+    async updateUserProfile(userId: string, accessToken: string, data: Record<string, any>): Promise<{ success: boolean; message: string }> {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update user profile');
+        }
+
+        return response.json();
+    }
 }
 
 export const authApi = new AuthApi();

@@ -383,13 +383,60 @@ export function ProfilePage() {
         setSaving(true);
 
         try {
-            // Firebase database removed
-            console.warn('Firebase database removed - profile not saved');
-            setError('Save functionality disabled - Firebase database removed');
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                throw new Error('Not authenticated');
+            }
+
+            // Prepare profile data based on role
+            const profileData: any = {
+                displayName: formData.displayName,
+                institutionId: formData.institutionId,
+                department: formData.department,
+                timezone: formData.timezone,
+                githubUsername: formData.githubUsername,
+                portfolioUrl: formData.portfolioUrl,
+                linkedinUrl: formData.linkedinUrl,
+                bio: formData.bio,
+                icebreakerPrompt: formData.icebreakerPrompt,
+                languages: formData.languages.split(',').map(l => l.trim()).filter(Boolean),
+                profileCompleted: true
+            };
+
+            // Add role-specific data
+            if (userProfile.role === 'student') {
+                profileData.major = formData.major;
+                profileData.year = formData.year;
+                profileData.enrollmentNumber = formData.enrollmentNumber;
+                profileData.courses = formData.courses.split(',').map(c => c.trim()).filter(Boolean);
+                profileData.projectTopics = formData.projectTopics.split(',').map(t => t.trim()).filter(Boolean);
+                profileData.preferredGroupSize = formData.preferredGroupSize;
+                profileData.learningStyle = formData.learningStyle;
+                profileData.workStyle = formData.workStyle;
+                profileData.communicationPreference = formData.communicationPreference;
+                profileData.meetingPreference = formData.meetingPreference;
+                profileData.goalPreference = formData.goalPreference;
+                profileData.commitmentLevel = formData.commitmentLevel;
+                profileData.teamPreference = formData.teamPreference;
+            } else if (userProfile.role === 'faculty') {
+                profileData.designation = formData.designation;
+                profileData.employeeId = formData.employeeId;
+                profileData.contactNumber = formData.contactNumber;
+            }
+
+            // Add skills and tools
+            profileData.selectedSkills = formData.selectedSkills;
+            profileData.tools = formData.tools;
+
+            // Update profile in MongoDB
+            const { authApi } = await import('../services/authApi');
+            await authApi.updateUserProfile(currentUser.uid, accessToken, profileData);
+
+            setSuccess(true);
             setIsEditing(false);
             setIsNewUser(false);
 
-            // Refresh the user profile in AuthContext to update profileCompleted status
+            // Refresh the user profile in AuthContext
             await refreshUserProfile();
 
             setTimeout(() => {
