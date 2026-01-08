@@ -50,7 +50,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             email: response.user.email,
                             displayName: response.user.displayName
                         });
-                        
+
                         setUserProfile({
                             uid: response.user.id,
                             email: response.user.email,
