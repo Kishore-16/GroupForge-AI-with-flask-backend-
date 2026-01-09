@@ -52,8 +52,7 @@ class AuthService:
             }, 400
 
         # Check if user already exists
-        existing_user = users_collection.find_one({'email': email})
-        if existing_user:
+        if existing_user := users_collection.find_one({'email': email}):
             return {
                 'success': False,
                 'message': 'User with this email already exists'
@@ -186,8 +185,7 @@ class AuthService:
         """Get user profile by ID"""
         from bson import ObjectId
         try:
-            user = users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
+            if user := users_collection.find_one({'_id': ObjectId(user_id)}):
                 user['id'] = str(user['_id'])
                 del user['password']  # Don't return password
                 return user
