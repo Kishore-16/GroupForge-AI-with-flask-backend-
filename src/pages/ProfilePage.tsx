@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts';
 import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button, Input } from '../components/ui';
+import { authApi } from '../services/authApi';
 import {
     User,
     Mail,
@@ -428,9 +429,8 @@ export function ProfilePage() {
             profileData.selectedSkills = formData.selectedSkills;
             profileData.tools = formData.tools;
 
-            // Update profile in MongoDB
-            const { authApi } = await import('../services/authApi');
-            await authApi.updateUserProfile(currentUser.uid, accessToken, profileData);
+            // Update profile via auth profile endpoint (uses JWT from localStorage)
+            await authApi.updateProfile(accessToken, profileData);
 
             setSuccess(true);
             setIsEditing(false);
