@@ -3,7 +3,8 @@ import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button } from '../components/ui';
 import { useAuth } from '../contexts';
 import { generateWithGroq } from '../config/groq';
-import { StudentProfile } from '../types';
+import { StudentProfile, canTakeAssessment } from '../types';
+import { authApi } from '../services/authApi';
 import {
     Brain,
     ArrowRight,
@@ -152,16 +153,27 @@ export function AssessmentPage() {
     const [questionCount, setQuestionCount] = useState(10);
 
     const studentProfile = userProfile as StudentProfile | null;
+    
+    // Following UserPlan.md: Use selectedSkills from profile (set during profile completion)
+    const profileSelectedSkills = studentProfile?.selectedSkills || [];
     const userSkills = studentProfile?.userSkills || [];
     const userTools = studentProfile?.tools || [];
-    const allSkillsAndTools = [...userSkills.map(s => s.name), ...userTools];
+    
+    // Combine profile selected skills with self-reported skills and tools
+    const allSkillsAndTools = [
+        ...profileSelectedSkills.map(s => s.replace(/_/g, ' ')),
+        ...userSkills.map(s => s.name),
+        ...userTools
+    ].filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
 
     useEffect(() => {
-        // Pre-select all skills if available
-        if (allSkillsAndTools.length > 0 && selectedSkills.length === 0) {
+        // Pre-select skills from profile (UserPlan.md: selectedSkills)
+        if (profileSelectedSkills.length > 0 && selectedSkills.length === 0) {
+            setSelectedSkills(profileSelectedSkills.map(s => s.replace(/_/g, ' ')));
+        } else if (allSkillsAndTools.length > 0 && selectedSkills.length === 0) {
             setSelectedSkills(allSkillsAndTools.slice(0, 5)); // Select first 5 by default
         }
-    }, [allSkillsAndTools]);
+    }, [profileSelectedSkills, allSkillsAndTools]);
 
     const toggleSkillSelection = (skill: string) => {
         setSelectedSkills(prev =>
@@ -379,25 +391,35 @@ Return ONLY the JSON array, no other text.`;
 
             setQuizResults(results);
 
-            // Firebase database removed
-            console.warn('Firebase database removed - quiz results not saved');
-            // await updateDoc(doc(db, 'quizzes', quizSession.id), {
-            //     status: 'completed',
-            //     completedAt: new Date().toISOString(),
-            //     results,
-            // });
+            // Following UserPlan.md: Update user profile with assessment results
+            try {
+                const accessToken = localStorage.getItem('accessToken');
+                if (accessToken && currentUser) {
+                    // Build skills object with scores (UserPlan.md format)
+                    const skillScores: Record<string, number> = {};
+                    skillBreakdown.forEach(skill => {
+                        // Convert skill name to lowercase with underscores (UserPlan.md format)
+                        const skillKey = skill.skill.toLowerCase().replace(/\s+/g, '_');
+                        skillScores[skillKey] = skill.percentage;
+                    });
 
-            // await updateDoc(doc(db, 'users', currentUser.uid), {
-            //     assessmentHistory: arrayUnion({
-            //         id: quizSession.id,
-            //         type: 'skill_quiz',
-            //         startedAt: quizSession.startedAt,
-            //         completedAt: new Date(),
-            //         status: 'completed',
-            //         score: results.score,
-            //         skills: quizSession.skills,
-            //     }),
-            // });
+                    // Prepare update data following UserPlan.md
+                    const updateData = {
+                        skills: skillScores,
+                        latestAssessment: {
+                            score: results.score,
+                            takenAt: new Date().toISOString(),
+                        },
+                        attendedTest: true, // UserPlan.md: Mark assessment as completed
+                    };
+
+                    await authApi.updateProfile(accessToken, updateData);
+                    console.log('Assessment results saved to profile');
+                }
+            } catch (saveError) {
+                console.error('Error saving assessment results:', saveError);
+                // Don't fail the quiz completion, just log the error
+            }
 
             setQuizSession({
                 ...quizSession,
@@ -438,17 +460,39 @@ Return ONLY the JSON array, no other text.`;
         setError('');
     };
 
-    // No skills in profile
-    if (allSkillsAndTools.length === 0) {
+    // Check profile completion status (UserPlan.md: Profile must be completed first)
+    if (!studentProfile?.profileCompleted) {
         return (
             <DashboardLayout>
                 <div className="max-w-2xl mx-auto">
                     <Card>
                         <CardBody className="py-16 text-center">
                             <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Skills Found</h2>
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Profile Not Complete</h2>
                             <p className="text-gray-500 dark:text-gray-400 mb-6">
-                                Please add skills and tools to your profile first to take a skill assessment quiz.
+                                Please complete your profile and select your skills first before taking the assessment.
+                            </p>
+                            <Button onClick={() => window.location.href = '/profile'}>
+                                Complete Profile
+                            </Button>
+                        </CardBody>
+                    </Card>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    // No skills selected in profile (UserPlan.md: selectedSkills must be set)
+    if (profileSelectedSkills.length === 0 && allSkillsAndTools.length === 0) {
+        return (
+            <DashboardLayout>
+                <div className="max-w-2xl mx-auto">
+                    <Card>
+                        <CardBody className="py-16 text-center">
+                            <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Skills Selected</h2>
+                            <p className="text-gray-500 dark:text-gray-400 mb-6">
+                                Please select skills in your profile first to take a skill assessment quiz.
                             </p>
                             <Button onClick={() => window.location.href = '/profile'}>
                                 Go to Profile

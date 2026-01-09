@@ -1,6 +1,4 @@
-// User types and interfaces for GroupForge AI
-
-import { SkillProfile, AssessmentRecord } from './assessment';
+// User types and interfaces for GroupForge AI - Following UserPlan.md specification
 
 export type UserRole = 'student' | 'faculty' | 'admin';
 
@@ -35,12 +33,24 @@ export interface TimeSlot {
     endTime: string; // HH:MM format
 }
 
-// User skill with level
+// User skill with level (for self-reported skills before assessment)
 export interface UserSkill {
     name: string;
     level: SkillLevel;
 }
 
+// Skill scores after assessment (skill name -> score 0-100)
+export interface SkillScores {
+    [skillName: string]: number;
+}
+
+// Latest assessment record (Following UserPlan.md)
+export interface LatestAssessment {
+    score: number;
+    takenAt: Date | string;
+}
+
+// Base user interface
 export interface User {
     uid: string;
     email: string;
@@ -49,60 +59,70 @@ export interface User {
     role: UserRole;
     institutionId: string;
     profileCompleted: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: Date | string;
+    updatedAt: Date | string;
 }
 
+// Student profile following UserPlan.md specification
 export interface StudentProfile extends User {
     role: 'student';
 
-    // Basic Info
-    enrollmentNumber?: string;
-    department?: string;
-    major?: string;
+    // Basic Profile Info
+    enrollmentNumber: string;
+    department: string;
+    major: string;
     year?: number;
 
-    // Course & Project
+    // Skills & Assessment (Following UserPlan.md)
+    selectedSkills: string[]; // Skills selected by user (e.g., ['python', 'ml', 'frontend', 'sql'])
+    skills: SkillScores; // Skill scores after assessment (e.g., { python: 72, ml: 65 })
+    latestAssessment?: LatestAssessment; // Latest assessment result
+
+    // Profile Status Flags (Following UserPlan.md)
+    attendedTest: boolean; // Has completed assessment
+    inTeam: boolean; // Is assigned to a team
+    teamId: string | null; // Reference to team document
+
+    // GitHub & Resume
+    githubConnected: boolean;
+    githubUsername: string;
+    resumeUploaded: boolean;
+
+    // Additional Info
+    bio: string;
+    timezone: string;
+    tools: string[]; // Tools user is familiar with
+
+    // Optional Extended Info
     courses?: string[];
     projectTopics?: string[];
     preferredGroupSize?: number;
-
-    // Availability
     availability?: TimeSlot[];
-    timezone?: string;
+    userSkills?: UserSkill[]; // Self-reported skill levels
+    portfolioUrl?: string;
+    linkedinUrl?: string;
+    languages?: string[];
 
-    // Skills & Experience
-    userSkills?: UserSkill[];
-    tools?: string[];
-
-    // Work & Learning Style
+    // Work & Learning Style (Optional)
     learningStyle?: LearningStyle;
     workStyle?: WorkStyle;
     communicationPreference?: CommunicationPreference;
     meetingPreference?: MeetingPreference;
 
-    // Goals & Preferences
+    // Goals & Preferences (Optional)
     goalPreference?: GoalPreference;
     commitmentLevel?: CommitmentLevel;
     teamPreference?: TeamPreference;
 
     // Optional Info
-    bio?: string;
     icebreakerPrompt?: string;
-    portfolioUrl?: string;
-    linkedinUrl?: string;
-    languages?: string[];
 
-    // Assessment Data
-    skills: SkillProfile;
-    assessmentHistory: AssessmentRecord[];
-    hasCompletedAssessment?: boolean;
-    githubConnected: boolean;
-    githubUsername?: string;
-    resumeUploaded: boolean;
-    teamAssignments: string[]; // Team IDs
+    // Legacy compatibility
+    assessmentHistory?: any[]; // For backward compatibility
+    teamAssignments?: string[]; // Legacy - use teamId instead
 }
 
+// Faculty profile
 export interface FacultyProfile extends User {
     role: 'faculty';
     designation?: 'Assistant Professor' | 'Associate Professor' | 'Professor';
@@ -112,6 +132,7 @@ export interface FacultyProfile extends User {
     coursesManaged: string[]; // Course IDs
 }
 
+// Admin profile
 export interface AdminProfile extends User {
     role: 'admin';
     permissions: AdminPermission[];
@@ -123,3 +144,57 @@ export type AdminPermission =
     | 'manage_institutions'
     | 'view_analytics'
     | 'configure_assessments';
+
+// Type guard functions
+export function isStudentProfile(user: User | null): user is StudentProfile {
+    return user?.role === 'student';
+}
+
+export function isFacultyProfile(user: User | null): user is FacultyProfile {
+    return user?.role === 'faculty';
+}
+
+export function isAdminProfile(user: User | null): user is AdminProfile {
+    return user?.role === 'admin';
+}
+
+// Helper to check if student can take assessment
+export function canTakeAssessment(profile: StudentProfile): boolean {
+    return profile.profileCompleted && profile.selectedSkills.length > 0;
+}
+
+// Helper to check if student is eligible for team formation
+export function isEligibleForTeam(profile: StudentProfile): boolean {
+    return profile.profileCompleted && profile.attendedTest && !profile.inTeam;
+}
+
+// Helper to get completion status
+export interface ProfileCompletionStatus {
+    profileCompleted: boolean;
+    assessmentCompleted: boolean;
+    inTeam: boolean;
+    nextStep: 'complete-profile' | 'take-assessment' | 'wait-for-team' | 'view-team';
+}
+
+export function getProfileCompletionStatus(profile: StudentProfile): ProfileCompletionStatus {
+    const { profileCompleted, attendedTest, inTeam } = profile;
+    const assessmentCompleted = attendedTest;
+
+    let nextStep: ProfileCompletionStatus['nextStep'];
+    if (!profileCompleted) {
+        nextStep = 'complete-profile';
+    } else if (!assessmentCompleted) {
+        nextStep = 'take-assessment';
+    } else if (!inTeam) {
+        nextStep = 'wait-for-team';
+    } else {
+        nextStep = 'view-team';
+    }
+
+    return {
+        profileCompleted,
+        assessmentCompleted,
+        inTeam,
+        nextStep,
+    };
+}

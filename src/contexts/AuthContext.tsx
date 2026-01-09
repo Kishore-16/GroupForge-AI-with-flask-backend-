@@ -1,6 +1,6 @@
 // Authentication context with MongoDB Atlas and JWT
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, UserRole } from '../types';
+import { User, UserRole, StudentProfile } from '../types';
 import { authApi } from '../services/authApi';
 
 interface AuthContextType {
@@ -27,6 +27,67 @@ export function useAuth() {
     return context;
 }
 
+// Helper to map API response to StudentProfile (Following UserPlan.md)
+function mapToStudentProfile(user: any): StudentProfile {
+    return {
+        uid: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        role: 'student',
+        institutionId: user.institutionId || '',
+        profileCompleted: user.profileCompleted || false,
+        createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+        updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
+        
+        // Basic Profile Info
+        enrollmentNumber: user.enrollmentNumber || '',
+        department: user.department || '',
+        major: user.major || '',
+        year: user.year,
+        
+        // Skills & Assessment (Following UserPlan.md)
+        selectedSkills: user.selectedSkills || [],
+        skills: user.skills || {},
+        latestAssessment: user.latestAssessment,
+        
+        // Profile Status Flags (Following UserPlan.md)
+        attendedTest: user.attendedTest || false,
+        inTeam: user.inTeam || false,
+        teamId: user.teamId || null,
+        
+        // GitHub & Resume
+        githubConnected: user.githubConnected || false,
+        githubUsername: user.githubUsername || '',
+        resumeUploaded: user.resumeUploaded || false,
+        
+        // Additional Info
+        bio: user.bio || '',
+        timezone: user.timezone || 'Asia/Calcutta',
+        tools: user.tools || [],
+        
+        // Optional fields
+        courses: user.courses,
+        projectTopics: user.projectTopics,
+        preferredGroupSize: user.preferredGroupSize,
+        userSkills: user.userSkills,
+        portfolioUrl: user.portfolioUrl,
+        linkedinUrl: user.linkedinUrl,
+        languages: user.languages,
+        learningStyle: user.learningStyle,
+        workStyle: user.workStyle,
+        communicationPreference: user.communicationPreference,
+        meetingPreference: user.meetingPreference,
+        goalPreference: user.goalPreference,
+        commitmentLevel: user.commitmentLevel,
+        teamPreference: user.teamPreference,
+        icebreakerPrompt: user.icebreakerPrompt,
+        
+        // Legacy compatibility
+        assessmentHistory: user.assessmentHistory || [],
+        teamAssignments: user.teamAssignments || [],
+    };
+}
+
 interface AuthProviderProps {
     children: ReactNode;
 }
@@ -51,21 +112,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             displayName: response.user.displayName
                         });
 
-                        setUserProfile({
-                            uid: response.user.id,
-                            email: response.user.email,
-                            displayName: response.user.displayName,
-                            role: response.user.role as UserRole,
-                            institutionId: response.user.institutionId || null,
-                            profileCompleted: response.user.profileCompleted || false,
-                            createdAt: new Date(response.user.createdAt),
-                            updatedAt: new Date(response.user.updatedAt),
-                            skills: response.user.skills || {},
-                            assessmentHistory: response.user.assessmentHistory || [],
-                            githubConnected: response.user.githubConnected || false,
-                            resumeUploaded: response.user.resumeUploaded || false,
-                            teamAssignments: response.user.teamAssignments || []
-                        } as any);
+                        // Map based on role
+                        if (response.user.role === 'student') {
+                            setUserProfile(mapToStudentProfile(response.user));
+                        } else {
+                            setUserProfile({
+                                uid: response.user.id,
+                                email: response.user.email,
+                                displayName: response.user.displayName,
+                                role: response.user.role as UserRole,
+                                institutionId: response.user.institutionId || '',
+                                profileCompleted: response.user.profileCompleted || false,
+                                createdAt: new Date(response.user.createdAt),
+                                updatedAt: new Date(response.user.updatedAt),
+                                ...response.user
+                            } as any);
+                        }
                     }
                 }
             } catch (err) {
@@ -115,21 +177,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 displayName: response.user.displayName
             });
 
-            setUserProfile({
-                uid: response.user.id,
-                email: response.user.email,
-                displayName: response.user.displayName,
-                role: response.user.role as UserRole,
-                institutionId: null,
-                profileCompleted: response.user.profileCompleted || false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                skills: {},
-                assessmentHistory: [],
-                githubConnected: false,
-                resumeUploaded: false,
-                teamAssignments: []
-            } as any);
+            // Map profile based on role (Following UserPlan.md)
+            if (response.user.role === 'student') {
+                setUserProfile(mapToStudentProfile(response.user));
+            } else {
+                setUserProfile({
+                    uid: response.user.id,
+                    email: response.user.email,
+                    displayName: response.user.displayName,
+                    role: response.user.role as UserRole,
+                    institutionId: response.user.institutionId || '',
+                    profileCompleted: response.user.profileCompleted || false,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    ...response.user
+                } as any);
+            }
         } catch (err: any) {
             const errorMessage = err.message || 'Login failed';
             setError(errorMessage);
@@ -173,21 +236,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 displayName: response.user.displayName
             });
 
-            setUserProfile({
-                uid: response.user.id,
-                email: response.user.email,
-                displayName: response.user.displayName,
-                role: response.user.role as UserRole,
-                institutionId: null,
-                profileCompleted: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                skills: {},
-                assessmentHistory: [],
-                githubConnected: false,
-                resumeUploaded: false,
-                teamAssignments: []
-            } as any);
+            // Create initial profile based on role (Following UserPlan.md)
+            if (role === 'student') {
+                const initialStudentProfile: StudentProfile = {
+                    uid: response.user.id,
+                    email: response.user.email,
+                    displayName: response.user.displayName,
+                    role: 'student',
+                    institutionId: '',
+                    profileCompleted: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    enrollmentNumber: '',
+                    department: '',
+                    major: '',
+                    selectedSkills: [],
+                    skills: {},
+                    attendedTest: false,
+                    inTeam: false,
+                    teamId: null,
+                    githubConnected: false,
+                    githubUsername: '',
+                    resumeUploaded: false,
+                    bio: '',
+                    timezone: 'Asia/Calcutta',
+                    tools: [],
+                    assessmentHistory: [],
+                    teamAssignments: [],
+                };
+                setUserProfile(initialStudentProfile);
+            } else {
+                setUserProfile({
+                    uid: response.user.id,
+                    email: response.user.email,
+                    displayName: response.user.displayName,
+                    role: role as UserRole,
+                    institutionId: '',
+                    profileCompleted: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                } as any);
+            }
         } catch (err: any) {
             const errorMessage = err.message || 'Sign up failed';
             setError(errorMessage);
@@ -226,21 +315,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const response = await authApi.getProfile(accessToken);
             if (response.success && response.user) {
-                setUserProfile({
-                    uid: response.user.id,
-                    email: response.user.email,
-                    displayName: response.user.displayName,
-                    role: response.user.role as UserRole,
-                    institutionId: response.user.institutionId || null,
-                    profileCompleted: response.user.profileCompleted || false,
-                    createdAt: new Date(response.user.createdAt),
-                    updatedAt: new Date(response.user.updatedAt),
-                    skills: response.user.skills || {},
-                    assessmentHistory: response.user.assessmentHistory || [],
-                    githubConnected: response.user.githubConnected || false,
-                    resumeUploaded: response.user.resumeUploaded || false,
-                    teamAssignments: response.user.teamAssignments || []
-                } as any);
+                // Map based on role (Following UserPlan.md)
+                if (response.user.role === 'student') {
+                    setUserProfile(mapToStudentProfile(response.user));
+                } else {
+                    setUserProfile({
+                        uid: response.user.id,
+                        email: response.user.email,
+                        displayName: response.user.displayName,
+                        role: response.user.role as UserRole,
+                        institutionId: response.user.institutionId || '',
+                        profileCompleted: response.user.profileCompleted || false,
+                        createdAt: new Date(response.user.createdAt),
+                        updatedAt: new Date(response.user.updatedAt),
+                        ...response.user
+                    } as any);
+                }
             }
         } catch (err: any) {
             console.error('Failed to refresh profile:', err);

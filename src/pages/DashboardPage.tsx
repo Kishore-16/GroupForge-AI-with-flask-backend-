@@ -17,10 +17,12 @@ import {
     BarChart3,
     CheckCircle2,
     Star,
-    Activity
+    Activity,
+    AlertCircle,
+    User
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { StudentProfile } from '../types';
+import { StudentProfile, getProfileCompletionStatus } from '../types';
 import { getMetaStats } from '../services/metaService';
 
 export function DashboardPage() {
@@ -38,7 +40,11 @@ export function DashboardPage() {
 }
 
 function StudentDashboard({ profile }: { profile: StudentProfile }) {
-    const hasCompletedAssessment = profile.skills?.leadership?.assessmentCount > 0;
+    // Following UserPlan.md: Check actual profile status
+    const completionStatus = getProfileCompletionStatus(profile);
+    const hasCompletedAssessment = profile.attendedTest;
+    const hasSkillScores = profile.skills && Object.keys(profile.skills).length > 0 && 
+        Object.values(profile.skills).some(score => score > 0);
 
     return (
         <DashboardLayout>
@@ -54,15 +60,105 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                             Hey, {profile.displayName?.split(' ')[0]}! 👋
                         </h1>
                         <p className="text-primary-100 max-w-2xl">
-                            {hasCompletedAssessment
-                                ? 'Your personalized dashboard is ready. Track your progress, view your skills, and collaborate with your teams.'
-                                : 'Let\'s get started! Complete your first assessment to unlock AI-powered team matching.'}
+                            {!completionStatus.profileCompleted
+                                ? 'Complete your profile to unlock AI-powered team matching and skill assessments.'
+                                : !completionStatus.assessmentCompleted
+                                ? 'Your profile is ready! Take the assessment to get matched with the perfect team.'
+                                : completionStatus.inTeam
+                                ? 'You\'re all set! Check out your team and start collaborating.'
+                                : 'Assessment completed! Wait for faculty to form teams or check your skill profile.'}
                         </p>
                     </div>
                     {/* Decorative elements */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
                     <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/5 rounded-full mr-20 -mb-24"></div>
                 </div>
+
+                {/* Journey Progress Banner (Following UserPlan.md) */}
+                <Card className="border-2 border-primary-200 dark:border-primary-800 bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20">
+                    <CardBody className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Your Journey</h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                completionStatus.inTeam 
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                                    : completionStatus.assessmentCompleted
+                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                                    : completionStatus.profileCompleted
+                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300'
+                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-300'
+                            }`}>
+                                {completionStatus.inTeam ? 'In Team' : 
+                                 completionStatus.assessmentCompleted ? 'Awaiting Team' :
+                                 completionStatus.profileCompleted ? 'Ready for Assessment' : 'Getting Started'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {/* Step 1: Profile */}
+                            <div className="flex-1">
+                                <div className={`flex items-center gap-2 mb-2 ${completionStatus.profileCompleted ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${completionStatus.profileCompleted ? 'bg-green-100 dark:bg-green-900/50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                                        {completionStatus.profileCompleted ? <CheckCircle2 className="w-5 h-5" /> : <User className="w-4 h-4" />}
+                                    </div>
+                                    <span className="font-medium text-sm">Profile</span>
+                                </div>
+                                <div className={`h-2 rounded-full ${completionStatus.profileCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                            </div>
+                            
+                            {/* Connector */}
+                            <div className={`w-8 h-0.5 ${completionStatus.profileCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                            
+                            {/* Step 2: Assessment */}
+                            <div className="flex-1">
+                                <div className={`flex items-center gap-2 mb-2 ${completionStatus.assessmentCompleted ? 'text-green-600 dark:text-green-400' : completionStatus.profileCompleted ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${completionStatus.assessmentCompleted ? 'bg-green-100 dark:bg-green-900/50' : completionStatus.profileCompleted ? 'bg-primary-100 dark:bg-primary-900/50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                                        {completionStatus.assessmentCompleted ? <CheckCircle2 className="w-5 h-5" /> : <ClipboardCheck className="w-4 h-4" />}
+                                    </div>
+                                    <span className="font-medium text-sm">Assessment</span>
+                                </div>
+                                <div className={`h-2 rounded-full ${completionStatus.assessmentCompleted ? 'bg-green-500' : completionStatus.profileCompleted ? 'bg-primary-200 dark:bg-primary-800' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                            </div>
+                            
+                            {/* Connector */}
+                            <div className={`w-8 h-0.5 ${completionStatus.assessmentCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                            
+                            {/* Step 3: Team */}
+                            <div className="flex-1">
+                                <div className={`flex items-center gap-2 mb-2 ${completionStatus.inTeam ? 'text-green-600 dark:text-green-400' : completionStatus.assessmentCompleted ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${completionStatus.inTeam ? 'bg-green-100 dark:bg-green-900/50' : completionStatus.assessmentCompleted ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                                        {completionStatus.inTeam ? <CheckCircle2 className="w-5 h-5" /> : <Users className="w-4 h-4" />}
+                                    </div>
+                                    <span className="font-medium text-sm">Team</span>
+                                </div>
+                                <div className={`h-2 rounded-full ${completionStatus.inTeam ? 'bg-green-500' : completionStatus.assessmentCompleted ? 'bg-blue-200 dark:bg-blue-800' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                            </div>
+                        </div>
+                        
+                        {/* Next Action */}
+                        {!completionStatus.inTeam && (
+                            <div className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-700">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <AlertCircle className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                                        <span className="text-gray-700 dark:text-gray-300">
+                                            {completionStatus.nextStep === 'complete-profile' && 'Complete your profile to continue'}
+                                            {completionStatus.nextStep === 'take-assessment' && 'Take the skill assessment to get matched with teams'}
+                                            {completionStatus.nextStep === 'wait-for-team' && 'Waiting for faculty to form teams'}
+                                        </span>
+                                    </div>
+                                    {completionStatus.nextStep !== 'wait-for-team' && (
+                                        <Link to={completionStatus.nextStep === 'complete-profile' ? '/profile' : '/assessment'}>
+                                            <Button size="sm" className="gap-2">
+                                                {completionStatus.nextStep === 'complete-profile' ? 'Complete Profile' : 'Take Assessment'}
+                                                <ArrowRight className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </CardBody>
+                </Card>
 
                 {/* Enhanced Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -72,19 +168,25 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                                 <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                     <ClipboardCheck className="w-7 h-7 text-white" />
                                 </div>
-                                <span className="text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/50 px-3 py-1 rounded-full">
-                                    Active
+                                <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                                    hasCompletedAssessment 
+                                        ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/50'
+                                        : 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/50'
+                                }`}>
+                                    {hasCompletedAssessment ? 'Completed' : 'Pending'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Assessments Completed</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Assessment Status</p>
                             <div className="flex items-baseline gap-2">
                                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                                    {profile.assessmentHistory?.length || 0}
+                                    {hasCompletedAssessment ? (profile.latestAssessment?.score || 'Done') : 'Not Taken'}
                                 </p>
-                                <span className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                                    <TrendingUp className="w-4 h-4" />
-                                    100%
-                                </span>
+                                {hasCompletedAssessment && profile.latestAssessment?.score && (
+                                    <span className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                                        <TrendingUp className="w-4 h-4" />
+                                        Score
+                                    </span>
+                                )}
                             </div>
                         </CardBody>
                     </Card>
@@ -95,18 +197,19 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                                 <div className="w-14 h-14 bg-gradient-to-br from-accent-500 to-accent-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                     <Users className="w-7 h-7 text-white" />
                                 </div>
-                                <span className="text-xs font-medium text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-900/50 px-3 py-1 rounded-full">
-                                    Teams
+                                <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                                    profile.inTeam
+                                        ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/50'
+                                        : 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50'
+                                }`}>
+                                    {profile.inTeam ? 'Assigned' : 'Not Assigned'}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Team Assignments</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Team Status</p>
                             <div className="flex items-baseline gap-2">
                                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                                    {profile.teamAssignments?.length || 0}
+                                    {profile.inTeam ? 'In Team' : 'Waiting'}
                                 </p>
-                                <span className="text-sm text-gray-400">
-                                    groups
-                                </span>
                             </div>
                         </CardBody>
                     </Card>
@@ -119,14 +222,17 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                                 </div>
                                 <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50 px-3 py-1 rounded-full flex items-center gap-1">
                                     <Star className="w-3 h-3" />
-                                    Level
+                                    Skills
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Overall Skill Level</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Selected Skills</p>
                             <div className="flex items-baseline gap-2">
                                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                                    {hasCompletedAssessment ? getOverallLevel(profile.skills) : 'N/A'}
+                                    {profile.selectedSkills?.length || 0}
                                 </p>
+                                <span className="text-sm text-gray-400">
+                                    skills
+                                </span>
                             </div>
                         </CardBody>
                     </Card>
@@ -154,38 +260,71 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                                 </div>
                             </CardHeader>
                             <CardBody className="p-6">
-                                {hasCompletedAssessment ? (
+                                {hasSkillScores ? (
                                     <div className="space-y-5">
-                                        <SkillBar
-                                            label="Leadership"
-                                            score={profile.skills.leadership.score}
-                                            confidence={profile.skills.leadership.confidence}
-                                        />
-                                        <SkillBar
-                                            label="Analytical Thinking"
-                                            score={profile.skills.analyticalThinking.score}
-                                            confidence={profile.skills.analyticalThinking.confidence}
-                                        />
-                                        <SkillBar
-                                            label="Creativity"
-                                            score={profile.skills.creativity.score}
-                                            confidence={profile.skills.creativity.confidence}
-                                        />
-                                        <SkillBar
-                                            label="Execution Strength"
-                                            score={profile.skills.executionStrength.score}
-                                            confidence={profile.skills.executionStrength.confidence}
-                                        />
-                                        <SkillBar
-                                            label="Communication"
-                                            score={profile.skills.communication.score}
-                                            confidence={profile.skills.communication.confidence}
-                                        />
-                                        <SkillBar
-                                            label="Teamwork"
-                                            score={profile.skills.teamwork.score}
-                                            confidence={profile.skills.teamwork.confidence}
-                                        />
+                                        {/* Display skills from UserPlan.md schema: skills object with scores */}
+                                        {Object.entries(profile.skills).map(([skillName, score]) => (
+                                            <SkillBar
+                                                key={skillName}
+                                                label={skillName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                score={score as number}
+                                                confidence="high"
+                                            />
+                                        ))}
+                                        {profile.latestAssessment && (
+                                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500 dark:text-gray-400">Overall Score</span>
+                                                    <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                                        {profile.latestAssessment.score}%
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm mt-1">
+                                                    <span className="text-gray-500 dark:text-gray-400">Last Assessed</span>
+                                                    <span className="text-gray-600 dark:text-gray-300">
+                                                        {new Date(profile.latestAssessment.takenAt).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : hasCompletedAssessment && profile.selectedSkills?.length > 0 ? (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                            Assessment completed. Your selected skills:
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {profile.selectedSkills.map(skill => (
+                                                <span
+                                                    key={skill}
+                                                    className="px-3 py-1.5 bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium"
+                                                >
+                                                    {skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : profile.selectedSkills?.length > 0 ? (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                            Your selected skills (take assessment to get scores):
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {profile.selectedSkills.map(skill => (
+                                                <span
+                                                    key={skill}
+                                                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium"
+                                                >
+                                                    {skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <Link to="/assessment" className="block mt-4">
+                                            <Button className="w-full gap-2">
+                                                <Sparkles className="w-4 h-4" />
+                                                Take Assessment to Get Scores
+                                            </Button>
+                                        </Link>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
@@ -194,12 +333,14 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                                         </div>
                                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Start Your Journey</h3>
                                         <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-sm mx-auto">
-                                            Take your first AI-powered skill assessment to unlock personalized team matching and insights
+                                            {!profile.profileCompleted 
+                                                ? 'Complete your profile and select skills to begin'
+                                                : 'Take your first AI-powered skill assessment to unlock personalized team matching'}
                                         </p>
-                                        <Link to="/assessment">
+                                        <Link to={profile.profileCompleted ? '/assessment' : '/profile'}>
                                             <Button className="gap-2">
                                                 <Sparkles className="w-4 h-4" />
-                                                Begin Assessment
+                                                {profile.profileCompleted ? 'Begin Assessment' : 'Complete Profile'}
                                                 <ArrowRight className="w-4 h-4" />
                                             </Button>
                                         </Link>
@@ -261,28 +402,68 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
                         </Card>
 
                         {/* Progress Card */}
-                        {hasCompletedAssessment && (
-                            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-800">
-                                <CardBody className="p-5">
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Great Progress!</h3>
-                                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                                You've completed your assessment. Keep building your profile!
-                                            </p>
-                                            <div className="flex gap-2">
+                        <Card className={`border-2 ${
+                            completionStatus.inTeam 
+                                ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-800'
+                                : hasCompletedAssessment
+                                ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-200 dark:border-blue-800'
+                                : 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-yellow-200 dark:border-yellow-800'
+                        }`}>
+                            <CardBody className="p-5">
+                                <div className="flex items-start gap-3">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                        completionStatus.inTeam 
+                                            ? 'bg-green-100 dark:bg-green-900/50'
+                                            : hasCompletedAssessment
+                                            ? 'bg-blue-100 dark:bg-blue-900/50'
+                                            : 'bg-yellow-100 dark:bg-yellow-900/50'
+                                    }`}>
+                                        {completionStatus.inTeam ? (
+                                            <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                        ) : hasCompletedAssessment ? (
+                                            <CheckCircle2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                        ) : (
+                                            <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                                            {completionStatus.inTeam 
+                                                ? 'Team Assigned!' 
+                                                : hasCompletedAssessment 
+                                                ? 'Assessment Complete!' 
+                                                : 'Action Required'}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                            {completionStatus.inTeam 
+                                                ? 'You\'ve been assigned to a team. Check your team page!'
+                                                : hasCompletedAssessment 
+                                                ? 'Great job! Wait for faculty to form teams.'
+                                                : !profile.profileCompleted
+                                                ? 'Complete your profile to continue.'
+                                                : 'Take the assessment to get matched with teams.'}
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {profile.profileCompleted && (
+                                                <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300 font-medium">
+                                                    ✓ Profile Complete
+                                                </span>
+                                            )}
+                                            {hasCompletedAssessment && (
                                                 <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300 font-medium">
                                                     ✓ Assessment Done
                                                 </span>
-                                            </div>
+                                            )}
+                                            {completionStatus.inTeam && (
+                                                <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300 font-medium">
+                                                    ✓ In Team
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
-                                </CardBody>
-                            </Card>
-                        )}
+                                </div>
+                            </CardBody>
+                        </Card>
                     </div>
                 </div>
             </div>
@@ -820,20 +1001,18 @@ function AdminDashboard() {
     );
 }
 
+// Helper function to calculate overall skill level from UserPlan.md schema
 function getOverallLevel(skills: StudentProfile['skills']): string {
-    if (!skills) return 'N/A';
-
-    const avg = (
-        skills.leadership.score +
-        skills.analyticalThinking.score +
-        skills.creativity.score +
-        skills.executionStrength.score +
-        skills.communication.score +
-        skills.teamwork.score
-    ) / 6;
+    if (!skills || typeof skills !== 'object') return 'N/A';
+    
+    const skillValues = Object.values(skills).filter(v => typeof v === 'number') as number[];
+    if (skillValues.length === 0) return 'N/A';
+    
+    const avg = skillValues.reduce((sum, score) => sum + score, 0) / skillValues.length;
 
     if (avg >= 80) return 'Expert';
     if (avg >= 60) return 'Advanced';
     if (avg >= 40) return 'Intermediate';
-    return 'Beginner';
+    if (avg > 0) return 'Beginner';
+    return 'N/A';
 }

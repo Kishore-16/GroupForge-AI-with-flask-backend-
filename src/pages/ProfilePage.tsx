@@ -12,13 +12,13 @@ import {
     Save,
     Edit2,
     CheckCircle,
+    CheckCircle2,
     ArrowRight,
     ArrowLeft,
     Briefcase,
     MessageSquare,
     Target,
     Globe,
-    BookOpen,
     Clock,
     Users,
     Linkedin
@@ -27,33 +27,8 @@ import {
     StudentProfile,
     FacultyProfile,
     SkillLevel,
-    LearningStyle,
-    WorkStyle,
-    CommunicationPreference,
-    MeetingPreference,
-    GoalPreference,
-    CommitmentLevel,
-    TeamPreference,
     UserSkill
 } from '../types';
-
-// Common skills for selection
-const COMMON_SKILLS = [
-    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust',
-    'React', 'Angular', 'Vue', 'Node.js', 'Express', 'Django', 'Flask',
-    'SQL', 'MongoDB', 'PostgreSQL', 'Firebase', 'AWS', 'Docker', 'Kubernetes',
-    'Git', 'Machine Learning', 'Data Analysis', 'UI/UX Design', 'Figma',
-    'Project Management', 'Agile', 'Scrum', 'Communication', 'Leadership',
-    'Problem Solving', 'Critical Thinking', 'Research', 'Writing', 'Public Speaking'
-];
-
-// Common tools for selection
-const COMMON_TOOLS = [
-    'VS Code', 'IntelliJ', 'PyCharm', 'Jupyter', 'Git', 'GitHub', 'GitLab',
-    'Slack', 'Discord', 'Zoom', 'Google Meet', 'Microsoft Teams',
-    'Figma', 'Adobe XD', 'Canva', 'Notion', 'Trello', 'Jira', 'Asana',
-    'Google Docs', 'Microsoft Office', 'LaTeX', 'Overleaf'
-];
 
 interface ProfileFormData {
     // Basic Info
@@ -63,11 +38,7 @@ interface ProfileFormData {
 
     // Student-specific fields
     major: string;
-    year: number | undefined;
     enrollmentNumber: string;
-    courses: string;
-    projectTopics: string;
-    preferredGroupSize: number | undefined;
 
     // Faculty-specific fields
     designation: 'Assistant Professor' | 'Associate Professor' | 'Professor' | '';
@@ -81,31 +52,13 @@ interface ProfileFormData {
     selectedSkills: UserSkill[];
     tools: string[];
     githubUsername: string;
-    portfolioUrl: string;
-    linkedinUrl: string;
-
-    // Work & Learning Style (Student-specific)
-    learningStyle: LearningStyle | '';
-    workStyle: WorkStyle | '';
-    communicationPreference: CommunicationPreference | '';
-    meetingPreference: MeetingPreference | '';
-
-    // Goals & Preferences (Student-specific)
-    goalPreference: GoalPreference | '';
-    commitmentLevel: CommitmentLevel | '';
-    teamPreference: TeamPreference | '';
 
     // Optional
     bio: string;
-    icebreakerPrompt: string;
-    languages: string;
 }
 
 const STUDENT_STEPS = [
-    { id: 1, title: 'Basic Info', icon: User },
-    { id: 2, title: 'Skills & Tools', icon: Briefcase },
-    { id: 3, title: 'Work Style', icon: MessageSquare },
-    { id: 4, title: 'Goals', icon: Target },
+    { id: 1, title: 'Profile Information', icon: User },
 ];
 
 const FACULTY_STEPS = [
@@ -127,30 +80,15 @@ export function ProfilePage() {
         institutionId: '',
         department: '',
         major: '',
-        year: undefined,
         enrollmentNumber: '',
-        courses: '',
-        projectTopics: '',
-        preferredGroupSize: undefined,
         designation: '',
         employeeId: '',
         contactNumber: '',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone: 'Asia/Kolkata',
         selectedSkills: [],
         tools: [],
         githubUsername: '',
-        portfolioUrl: '',
-        linkedinUrl: '',
-        learningStyle: '',
-        workStyle: '',
-        communicationPreference: '',
-        meetingPreference: '',
-        goalPreference: '',
-        commitmentLevel: '',
-        teamPreference: '',
         bio: '',
-        icebreakerPrompt: '',
-        languages: '',
     });
 
     useEffect(() => {
@@ -173,30 +111,15 @@ export function ProfilePage() {
                     institutionId: userProfile.institutionId || '',
                     department: studentProfile.department || '',
                     major: studentProfile.major || '',
-                    year: studentProfile.year,
                     enrollmentNumber: studentProfile.enrollmentNumber || '',
                     designation: '',
                     employeeId: '',
                     contactNumber: '',
-                    courses: studentProfile.courses?.join(', ') || '',
-                    projectTopics: studentProfile.projectTopics?.join(', ') || '',
-                    preferredGroupSize: studentProfile.preferredGroupSize,
-                    timezone: studentProfile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timezone: studentProfile.timezone || 'Asia/Kolkata',
                     selectedSkills: studentProfile.userSkills || [],
                     tools: studentProfile.tools || [],
                     githubUsername: studentProfile.githubUsername || '',
-                    portfolioUrl: studentProfile.portfolioUrl || '',
-                    linkedinUrl: studentProfile.linkedinUrl || '',
-                    learningStyle: studentProfile.learningStyle || '',
-                    workStyle: studentProfile.workStyle || '',
-                    communicationPreference: studentProfile.communicationPreference || '',
-                    meetingPreference: studentProfile.meetingPreference || '',
-                    goalPreference: studentProfile.goalPreference || '',
-                    commitmentLevel: studentProfile.commitmentLevel || '',
-                    teamPreference: studentProfile.teamPreference || '',
                     bio: studentProfile.bio || '',
-                    icebreakerPrompt: studentProfile.icebreakerPrompt || '',
-                    languages: studentProfile.languages?.join(', ') || '',
                 });
             } else if (userProfile.role === 'faculty') {
                 const facultyProfile = userProfile as FacultyProfile;
@@ -208,27 +131,12 @@ export function ProfilePage() {
                     employeeId: facultyProfile.employeeId || '',
                     contactNumber: facultyProfile.contactNumber || '',
                     major: '',
-                    year: undefined,
                     enrollmentNumber: '',
-                    courses: '',
-                    projectTopics: '',
-                    preferredGroupSize: undefined,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timezone: 'Asia/Kolkata',
                     selectedSkills: [],
                     tools: [],
                     githubUsername: '',
-                    portfolioUrl: '',
-                    linkedinUrl: '',
-                    learningStyle: '',
-                    workStyle: '',
-                    communicationPreference: '',
-                    meetingPreference: '',
-                    goalPreference: '',
-                    commitmentLevel: '',
-                    teamPreference: '',
                     bio: '',
-                    icebreakerPrompt: '',
-                    languages: '',
                 });
             }
         } else if (currentUser) {
@@ -245,9 +153,7 @@ export function ProfilePage() {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'year' || name === 'preferredGroupSize'
-                ? (value ? parseInt(value) : undefined)
-                : value
+            [name]: value
         }));
     };
 
@@ -277,14 +183,7 @@ export function ProfilePage() {
         }));
     };
 
-    const toggleTool = (tool: string) => {
-        setFormData(prev => ({
-            ...prev,
-            tools: prev.tools.includes(tool)
-                ? prev.tools.filter(t => t !== tool)
-                : [...prev.tools, tool]
-        }));
-    };
+
 
     const isFacultyUser = userProfile?.role === 'faculty';
     const steps = isFacultyUser ? FACULTY_STEPS : STUDENT_STEPS;
@@ -321,43 +220,10 @@ export function ProfilePage() {
                         setError('Major/Program is required');
                         return false;
                     }
-                    if (!formData.year) {
-                        setError('Year of study is required');
+                    if (formData.selectedSkills.length === 0) {
+                        setError('Please select at least one skill');
                         return false;
                     }
-                }
-                return true;
-            case 2:
-                // Skills validation only for students
-                if (formData.selectedSkills.length === 0) {
-                    setError('Please select at least one skill');
-                    return false;
-                }
-                return true;
-            case 3:
-                // Step 3 only exists for students
-                if (!formData.learningStyle) {
-                    setError('Please select your learning style');
-                    return false;
-                }
-                if (!formData.workStyle) {
-                    setError('Please select your work style');
-                    return false;
-                }
-                if (!formData.communicationPreference) {
-                    setError('Please select your communication preference');
-                    return false;
-                }
-                return true;
-            case 4:
-                // Step 4 only exists for students
-                if (!formData.goalPreference) {
-                    setError('Please select your primary goal');
-                    return false;
-                }
-                if (!formData.commitmentLevel) {
-                    setError('Please select your commitment level');
-                    return false;
                 }
                 return true;
             default:
@@ -389,45 +255,45 @@ export function ProfilePage() {
                 throw new Error('Not authenticated');
             }
 
-            // Prepare profile data based on role
+            // Prepare profile data based on role (Following UserPlan.md)
             const profileData: any = {
                 displayName: formData.displayName,
                 institutionId: formData.institutionId,
                 department: formData.department,
                 timezone: formData.timezone,
                 githubUsername: formData.githubUsername,
-                portfolioUrl: formData.portfolioUrl,
-                linkedinUrl: formData.linkedinUrl,
                 bio: formData.bio,
-                icebreakerPrompt: formData.icebreakerPrompt,
-                languages: formData.languages.split(',').map(l => l.trim()).filter(Boolean),
-                profileCompleted: true
+                profileCompleted: true,
+                tools: formData.tools,
             };
 
-            // Add role-specific data
+            // Add role-specific data (Following UserPlan.md)
             if (userProfile.role === 'student') {
                 profileData.major = formData.major;
-                profileData.year = formData.year;
                 profileData.enrollmentNumber = formData.enrollmentNumber;
-                profileData.courses = formData.courses.split(',').map(c => c.trim()).filter(Boolean);
-                profileData.projectTopics = formData.projectTopics.split(',').map(t => t.trim()).filter(Boolean);
-                profileData.preferredGroupSize = formData.preferredGroupSize;
-                profileData.learningStyle = formData.learningStyle;
-                profileData.workStyle = formData.workStyle;
-                profileData.communicationPreference = formData.communicationPreference;
-                profileData.meetingPreference = formData.meetingPreference;
-                profileData.goalPreference = formData.goalPreference;
-                profileData.commitmentLevel = formData.commitmentLevel;
-                profileData.teamPreference = formData.teamPreference;
+                
+                // Following UserPlan.md: selectedSkills stores skill names
+                // skills stores skill scores (initialized to 0 before assessment)
+                const selectedSkillNames = formData.selectedSkills.map(s => s.name.toLowerCase().replace(/\s+/g, '_'));
+                profileData.selectedSkills = selectedSkillNames;
+                
+                // Initialize skills object with scores of 0 (will be updated after assessment)
+                const skillsObject: Record<string, number> = {};
+                selectedSkillNames.forEach(skillName => {
+                    skillsObject[skillName] = 0;
+                });
+                profileData.skills = skillsObject;
+                
+                // Set GitHub connection status based on username
+                profileData.githubConnected = !!formData.githubUsername.trim();
+                
+                // Self-reported skill levels (optional, for additional context)
+                profileData.userSkills = formData.selectedSkills;
             } else if (userProfile.role === 'faculty') {
                 profileData.designation = formData.designation;
                 profileData.employeeId = formData.employeeId;
                 profileData.contactNumber = formData.contactNumber;
             }
-
-            // Add skills and tools
-            profileData.selectedSkills = formData.selectedSkills;
-            profileData.tools = formData.tools;
 
             // Update profile via auth profile endpoint (uses JWT from localStorage)
             await authApi.updateProfile(accessToken, profileData);
@@ -559,33 +425,14 @@ export function ProfilePage() {
                                     onChange={handleInputChange}
                                 />
                             ) : (
-                                <Step1BasicInfo
+                                <Step1BasicInfoStudent
                                     formData={formData}
                                     onChange={handleInputChange}
+                                    toggleSkill={toggleSkill}
+                                    updateSkillLevel={updateSkillLevel}
+                                    setFormData={setFormData}
                                 />
                             )
-                        )}
-                        {!isFaculty && currentStep === 2 && (
-                            <Step2SkillsTools
-                                formData={formData}
-                                onChange={handleInputChange}
-                                toggleSkill={toggleSkill}
-                                updateSkillLevel={updateSkillLevel}
-                                toggleTool={toggleTool}
-                                isFaculty={isFaculty}
-                            />
-                        )}
-                        {!isFaculty && currentStep === 3 && (
-                            <Step3WorkStyle
-                                formData={formData}
-                                onChange={handleInputChange}
-                            />
-                        )}
-                        {!isFaculty && currentStep === 4 && (
-                            <Step4Goals
-                                formData={formData}
-                                onChange={handleInputChange}
-                            />
                         )}
                     </CardBody>
                 </Card>
@@ -627,11 +474,32 @@ export function ProfilePage() {
     );
 }
 
-// Step 1: Basic Information
-function Step1BasicInfo({ formData, onChange }: {
+// Step 1: Basic Information for Students (simplified with skills)
+function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLevel, setFormData }: {
     formData: ProfileFormData;
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+    toggleSkill: (skill: string) => void;
+    updateSkillLevel: (skill: string, level: SkillLevel) => void;
+    setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
 }) {
+    const COMMON_SKILLS = [
+        'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust',
+        'React', 'Angular', 'Vue', 'Node.js', 'Express', 'Django', 'Flask',
+        'SQL', 'MongoDB', 'PostgreSQL', 'Firebase', 'AWS', 'Docker', 'Kubernetes',
+        'Git', 'Machine Learning', 'Data Analysis', 'UI/UX Design', 'Figma',
+        'Project Management', 'Agile', 'Scrum', 'Communication', 'Leadership',
+        'Problem Solving', 'Critical Thinking', 'Research', 'Writing', 'Public Speaking',
+        'Frontend', 'Backend', 'Full Stack', 'DevOps', 'Mobile Development',
+        'Data Science', 'Deep Learning', 'NLP', 'Computer Vision', 'Cybersecurity'
+    ];
+
+    const COMMON_TOOLS = [
+        'VS Code', 'IntelliJ', 'PyCharm', 'Jupyter', 'Git', 'GitHub', 'GitLab',
+        'Slack', 'Discord', 'Zoom', 'Google Meet', 'Microsoft Teams',
+        'Figma', 'Adobe XD', 'Canva', 'Notion', 'Trello', 'Jira', 'Asana',
+        'Google Docs', 'Microsoft Office', 'LaTeX', 'Overleaf'
+    ];
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
@@ -639,11 +507,12 @@ function Step1BasicInfo({ formData, onChange }: {
                     <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tell us about yourself and your academic background</p>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Profile Information</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Tell us about yourself and your skills</p>
                 </div>
             </div>
 
+            {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                     label="Full Name *"
@@ -677,25 +546,6 @@ function Step1BasicInfo({ formData, onChange }: {
                     placeholder="e.g., B.Tech Computer Science"
                     required
                 />
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Year of Study *
-                    </label>
-                    <select
-                        name="year"
-                        value={formData.year || ''}
-                        onChange={onChange}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        required
-                    >
-                        <option value="">Select year</option>
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
-                        <option value="5">5th Year (Masters/PhD)</option>
-                    </select>
-                </div>
                 <Input
                     label="Enrollment Number"
                     name="enrollmentNumber"
@@ -703,74 +553,147 @@ function Step1BasicInfo({ formData, onChange }: {
                     onChange={onChange}
                     placeholder="e.g., 2024CS001"
                 />
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <Clock className="w-4 h-4 inline mr-1" />
+                        Timezone
+                    </label>
+                    <select
+                        name="timezone"
+                        value={formData.timezone}
+                        onChange={onChange}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                        <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                        <option value="America/New_York">America/New_York (EST)</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
+                        <option value="Europe/London">Europe/London (GMT)</option>
+                        <option value="Europe/Paris">Europe/Paris (CET)</option>
+                        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                        <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                        <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+                    </select>
+                </div>
             </div>
 
+            {/* Bio */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Bio
+                </label>
+                <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={onChange}
+                    placeholder="Tell us about yourself..."
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                />
+            </div>
+
+            {/* Skills Selection */}
             <div className="border-t dark:border-gray-700 pt-4 mt-6">
                 <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Courses & Projects
+                    <Briefcase className="w-4 h-4" />
+                    Skills *
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        label="Current Courses"
-                        name="courses"
-                        value={formData.courses}
-                        onChange={onChange}
-                        placeholder="e.g., Data Structures, ML (comma separated)"
-                        helperText="Separate multiple courses with commas"
-                    />
-                    <Input
-                        label="Project Topics of Interest"
-                        name="projectTopics"
-                        value={formData.projectTopics}
-                        onChange={onChange}
-                        placeholder="e.g., AI, Web Dev (comma separated)"
-                        helperText="Topics you'd like to work on"
-                    />
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Preferred Group Size
-                        </label>
-                        <select
-                            name="preferredGroupSize"
-                            value={formData.preferredGroupSize || ''}
-                            onChange={onChange}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        >
-                            <option value="">No preference</option>
-                            <option value="2">2 members</option>
-                            <option value="3">3 members</option>
-                            <option value="4">4 members</option>
-                            <option value="5">5 members</option>
-                            <option value="6">6+ members</option>
-                        </select>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-3">Select at least one skill</label>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {COMMON_SKILLS.map(skill => {
+                        const isSelected = formData.selectedSkills.some(s => s.name === skill);
+                        return (
+                            <button
+                                key={skill}
+                                onClick={() => toggleSkill(skill)}
+                                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                    isSelected
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                                {skill}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Selected Skills with Levels */}
+                {formData.selectedSkills.length > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mt-4">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Rate your proficiency:</p>
+                        <div className="space-y-3">
+                            {formData.selectedSkills.map(skill => (
+                                <div key={skill.name} className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{skill.name}</span>
+                                    <select
+                                        value={skill.level}
+                                        onChange={(e) => updateSkillLevel(skill.name, e.target.value as SkillLevel)}
+                                        className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    >
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                    </select>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <Clock className="w-4 h-4 inline mr-1" />
-                            Timezone
-                        </label>
-                        <select
-                            name="timezone"
-                            value={formData.timezone}
-                            onChange={onChange}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        >
-                            <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                            <option value="America/New_York">America/New_York (EST)</option>
-                            <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
-                            <option value="Europe/London">Europe/London (GMT)</option>
-                            <option value="Europe/Paris">Europe/Paris (CET)</option>
-                            <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                            <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
-                            <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
-                        </select>
+                )}
+            </div>
+
+            {/* Tools & Links */}
+            <div className="border-t dark:border-gray-700 pt-4 mt-6">
+                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">Tools & Links</h3>
+                
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        Tools
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                        {COMMON_TOOLS.map(tool => {
+                            const isSelected = formData.tools.includes(tool);
+                            return (
+                                <button
+                                    key={tool}
+                                    onClick={() => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            tools: prev.tools.includes(tool)
+                                                ? prev.tools.filter(t => t !== tool)
+                                                : [...prev.tools, tool]
+                                        }));
+                                    }}
+                                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                        isSelected
+                                            ? 'bg-primary-500 text-white'
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                    }`}
+                                >
+                                    {tool}
+                                </button>
+                            );
+                        })}
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <Github className="w-4 h-4 inline mr-1" />
+                        GitHub Username
+                    </label>
+                    <Input
+                        name="githubUsername"
+                        value={formData.githubUsername}
+                        onChange={onChange}
+                        placeholder="johndoe"
+                    />
                 </div>
             </div>
         </div>
     );
 }
+
+
 
 // Step 1: Basic Information for Faculty
 function Step1BasicInfoFaculty({ formData, onChange }: {
@@ -881,502 +804,6 @@ function Step1BasicInfoFaculty({ formData, onChange }: {
     );
 }
 
-// Step 2: Skills & Tools
-function Step2SkillsTools({ formData, onChange, toggleSkill, updateSkillLevel, toggleTool, isFaculty }: {
-    formData: ProfileFormData;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-    toggleSkill: (skill: string) => void;
-    updateSkillLevel: (skill: string, level: SkillLevel) => void;
-    toggleTool: (tool: string) => void;
-    isFaculty?: boolean;
-}) {
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Skills & Experience</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Select your skills and rate your proficiency</p>
-                </div>
-            </div>
-
-            {/* Skills Selection */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Skills {!isFaculty && '* (Select at least one)'}
-                </label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {COMMON_SKILLS.map(skill => {
-                        const isSelected = formData.selectedSkills.some(s => s.name === skill);
-                        return (
-                            <button
-                                key={skill}
-                                type="button"
-                                onClick={() => toggleSkill(skill)}
-                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${isSelected
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                    }`}
-                            >
-                                {skill}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Selected Skills with Levels */}
-                {formData.selectedSkills.length > 0 && (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mt-4">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Rate your proficiency:</p>
-                        <div className="space-y-3">
-                            {formData.selectedSkills.map(skill => (
-                                <div key={skill.name} className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-900 dark:text-white">{skill.name}</span>
-                                    <div className="flex gap-2">
-                                        {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map(level => (
-                                            <button
-                                                key={level}
-                                                type="button"
-                                                onClick={() => updateSkillLevel(skill.name, level)}
-                                                className={`px-3 py-1 rounded text-xs font-medium capitalize ${skill.level === level
-                                                    ? level === 'beginner' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
-                                                        level === 'intermediate' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' :
-                                                            'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
-                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                                    }`}
-                                            >
-                                                {level}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Tools Selection */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Tools & Technologies
-                </label>
-                <div className="flex flex-wrap gap-2">
-                    {COMMON_TOOLS.map(tool => {
-                        const isSelected = formData.tools.includes(tool);
-                        return (
-                            <button
-                                key={tool}
-                                type="button"
-                                onClick={() => toggleTool(tool)}
-                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${isSelected
-                                    ? 'bg-accent-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                    }`}
-                            >
-                                {tool}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Links */}
-            <div className="border-t dark:border-gray-700 pt-4 mt-6">
-                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">Portfolio & Links</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <Github className="w-4 h-4 inline mr-1" />
-                            GitHub Username
-                        </label>
-                        <Input
-                            name="githubUsername"
-                            value={formData.githubUsername}
-                            onChange={onChange}
-                            placeholder="johndoe"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <Globe className="w-4 h-4 inline mr-1" />
-                            Portfolio URL
-                        </label>
-                        <Input
-                            name="portfolioUrl"
-                            value={formData.portfolioUrl}
-                            onChange={onChange}
-                            placeholder="https://yourportfolio.com"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <Linkedin className="w-4 h-4 inline mr-1" />
-                            LinkedIn URL
-                        </label>
-                        <Input
-                            name="linkedinUrl"
-                            value={formData.linkedinUrl}
-                            onChange={onChange}
-                            placeholder="https://linkedin.com/in/..."
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Step 3: Work & Learning Style
-function Step3WorkStyle({ formData, onChange }: {
-    formData: ProfileFormData;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-}) {
-    const styleOptions = {
-        learningStyle: [
-            { value: 'visual', label: 'Visual', desc: 'Learn best through diagrams, videos, charts' },
-            { value: 'auditory', label: 'Auditory', desc: 'Learn best through discussions and lectures' },
-            { value: 'reading', label: 'Reading/Writing', desc: 'Learn best through documentation and notes' },
-            { value: 'kinesthetic', label: 'Hands-on', desc: 'Learn best by doing and experimenting' },
-        ],
-        workStyle: [
-            { value: 'planner', label: 'Planner', desc: 'Prefer structured schedules and clear deadlines' },
-            { value: 'flexible', label: 'Flexible', desc: 'Prefer adaptable timelines and spontaneous work' },
-            { value: 'mixed', label: 'Mixed', desc: 'Comfortable with both structured and flexible approaches' },
-        ],
-        communicationPreference: [
-            { value: 'chat', label: 'Text/Chat', desc: 'Prefer async communication via messages' },
-            { value: 'voice', label: 'Voice Calls', desc: 'Prefer audio calls for discussions' },
-            { value: 'video', label: 'Video Calls', desc: 'Prefer face-to-face video meetings' },
-            { value: 'in-person', label: 'In-Person', desc: 'Prefer meeting in person when possible' },
-        ],
-        meetingPreference: [
-            { value: 'online', label: 'Online Only', desc: 'Prefer virtual meetings exclusively' },
-            { value: 'in-person', label: 'In-Person Only', desc: 'Prefer physical meetings exclusively' },
-            { value: 'hybrid', label: 'Hybrid', desc: 'Comfortable with both online and in-person' },
-        ],
-    };
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Work & Learning Style</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Help us understand how you work best</p>
-                </div>
-            </div>
-
-            {/* Learning Style */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    How do you learn best? *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {styleOptions.learningStyle.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.learningStyle === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="learningStyle"
-                                value={option.value}
-                                checked={formData.learningStyle === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Work Style */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    What's your work style? *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {styleOptions.workStyle.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.workStyle === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="workStyle"
-                                value={option.value}
-                                checked={formData.workStyle === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Communication Preference */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    How do you prefer to communicate? *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {styleOptions.communicationPreference.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.communicationPreference === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="communicationPreference"
-                                value={option.value}
-                                checked={formData.communicationPreference === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Meeting Preference */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Meeting preference
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {styleOptions.meetingPreference.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.meetingPreference === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="meetingPreference"
-                                value={option.value}
-                                checked={formData.meetingPreference === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Step 4: Goals & Preferences
-function Step4Goals({ formData, onChange }: {
-    formData: ProfileFormData;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-}) {
-    const goalOptions = {
-        goalPreference: [
-            { value: 'grade', label: 'Best Grade', desc: 'Priority is achieving the highest possible grade' },
-            { value: 'learning', label: 'Deep Learning', desc: 'Priority is learning and understanding deeply' },
-            { value: 'speed', label: 'Quick Completion', desc: 'Priority is finishing efficiently' },
-            { value: 'balanced', label: 'Balanced', desc: 'Balance between grades, learning, and efficiency' },
-        ],
-        commitmentLevel: [
-            { value: 'low', label: 'Casual', desc: '5-10 hours/week - Other commitments take priority' },
-            { value: 'medium', label: 'Moderate', desc: '10-20 hours/week - Balanced with other activities' },
-            { value: 'high', label: 'Dedicated', desc: '20+ hours/week - This is a top priority' },
-        ],
-        teamPreference: [
-            { value: 'mixed-skills', label: 'Mixed Skills', desc: 'Prefer teams with diverse skill sets' },
-            { value: 'similar-skills', label: 'Similar Skills', desc: 'Prefer teams with similar expertise' },
-            { value: 'no-preference', label: 'No Preference', desc: 'Open to any team composition' },
-        ],
-    };
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center">
-                    <Target className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Goals & Preferences</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tell us about your goals and team preferences</p>
-                </div>
-            </div>
-
-            {/* Goal Preference */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    What's your primary goal for group projects? *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {goalOptions.goalPreference.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.goalPreference === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="goalPreference"
-                                value={option.value}
-                                checked={formData.goalPreference === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Commitment Level */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    How much time can you commit? *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {goalOptions.commitmentLevel.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.commitmentLevel === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="commitmentLevel"
-                                value={option.value}
-                                checked={formData.commitmentLevel === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Team Preference */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Team composition preference
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {goalOptions.teamPreference.map(option => (
-                        <label
-                            key={option.value}
-                            className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.teamPreference === option.value
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="teamPreference"
-                                value={option.value}
-                                checked={formData.teamPreference === option.value}
-                                onChange={onChange}
-                                className="mt-1"
-                            />
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{option.label}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{option.desc}</p>
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* Optional Info */}
-            <div className="border-t dark:border-gray-700 pt-6">
-                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Optional: About You
-                </h3>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Short Bio
-                        </label>
-                        <textarea
-                            name="bio"
-                            value={formData.bio}
-                            onChange={onChange}
-                            placeholder="Tell potential teammates a bit about yourself..."
-                            rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Icebreaker
-                        </label>
-                        <Input
-                            name="icebreakerPrompt"
-                            value={formData.icebreakerPrompt}
-                            onChange={onChange}
-                            placeholder="e.g., What's your favorite programming language and why?"
-                            helperText="A fun fact or question to help break the ice"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Languages Spoken
-                        </label>
-                        <Input
-                            name="languages"
-                            value={formData.languages}
-                            onChange={onChange}
-                            placeholder="e.g., English, Spanish, Mandarin"
-                            helperText="Separate multiple languages with commas"
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 // View Mode Component for existing users
 function ProfileViewMode({ userProfile, onEdit }: {
     userProfile: StudentProfile | FacultyProfile | null;
@@ -1449,29 +876,143 @@ function ProfileViewMode({ userProfile, onEdit }: {
                     </CardBody>
                 </Card>
 
-                {/* Skills - show only if available */}
-                {!isFaculty && studentProfile?.userSkills && studentProfile.userSkills.length > 0 && (
+                {/* Journey Status Card - For students only (UserPlan.md) */}
+                {!isFaculty && (
+                    <Card className="border-l-4 border-l-primary-500">
+                        <CardBody className="p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Journey Status</h3>
+                            <div className="grid grid-cols-3 gap-4">
+                                {/* Profile Completion */}
+                                <div className={`p-4 rounded-lg ${studentProfile?.profileCompleted ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        {studentProfile?.profileCompleted ? (
+                                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        ) : (
+                                            <User className="w-5 h-5 text-gray-400" />
+                                        )}
+                                        <span className="font-medium text-gray-900 dark:text-white">Profile</span>
+                                    </div>
+                                    <p className={`text-sm ${studentProfile?.profileCompleted ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                        {studentProfile?.profileCompleted ? 'Completed' : 'Incomplete'}
+                                    </p>
+                                </div>
+                                
+                                {/* Assessment Status */}
+                                <div className={`p-4 rounded-lg ${studentProfile?.attendedTest ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        {studentProfile?.attendedTest ? (
+                                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        ) : (
+                                            <Target className="w-5 h-5 text-gray-400" />
+                                        )}
+                                        <span className="font-medium text-gray-900 dark:text-white">Assessment</span>
+                                    </div>
+                                    <p className={`text-sm ${studentProfile?.attendedTest ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                        {studentProfile?.attendedTest ? 'Completed' : 'Not Taken'}
+                                    </p>
+                                </div>
+                                
+                                {/* Team Status */}
+                                <div className={`p-4 rounded-lg ${studentProfile?.inTeam ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        {studentProfile?.inTeam ? (
+                                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        ) : (
+                                            <Users className="w-5 h-5 text-gray-400" />
+                                        )}
+                                        <span className="font-medium text-gray-900 dark:text-white">Team</span>
+                                    </div>
+                                    <p className={`text-sm ${studentProfile?.inTeam ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                        {studentProfile?.inTeam ? 'In a Team' : 'Not in Team'}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardBody>
+                    </Card>
+                )}
+
+                {/* Skills - Following UserPlan.md schema */}
+                {!isFaculty && (studentProfile?.selectedSkills?.length > 0 || (studentProfile?.userSkills && studentProfile.userSkills.length > 0)) && (
                     <Card>
                         <CardHeader>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                                 <Briefcase className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                                 Skills
+                                {studentProfile?.attendedTest && (
+                                    <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 px-2 py-0.5 rounded-full font-normal">
+                                        Assessed
+                                    </span>
+                                )}
                             </h3>
                         </CardHeader>
                         <CardBody className="p-6">
-                            <div className="flex flex-wrap gap-2">
-                                {studentProfile.userSkills.map(skill => (
-                                    <span
-                                        key={skill.name}
-                                        className={`px-3 py-1 rounded-full text-sm font-medium ${skill.level === 'advanced' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
-                                            skill.level === 'intermediate' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' :
-                                                'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-                                            }`}
-                                    >
-                                        {skill.name} ({skill.level})
-                                    </span>
-                                ))}
-                            </div>
+                            {/* Selected Skills with Scores (UserPlan.md) */}
+                            {studentProfile?.selectedSkills?.length > 0 && (
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Selected Skills for Assessment:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {studentProfile.selectedSkills.map(skill => {
+                                            const score = studentProfile.skills?.[skill] as number | undefined;
+                                            const hasScore = typeof score === 'number' && score > 0;
+                                            return (
+                                                <span
+                                                    key={skill}
+                                                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                        hasScore 
+                                                            ? score >= 70 
+                                                                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' 
+                                                                : score >= 50 
+                                                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                                                                : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
+                                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                                    }`}
+                                                >
+                                                    {skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                    {hasScore && <span className="ml-1">({score}%)</span>}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Self-reported skill levels */}
+                            {studentProfile?.userSkills && studentProfile.userSkills.length > 0 && (
+                                <div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Self-Reported Proficiency:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {studentProfile.userSkills.map(skill => (
+                                            <span
+                                                key={skill.name}
+                                                className={`px-3 py-1 rounded-full text-sm font-medium ${skill.level === 'advanced' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
+                                                    skill.level === 'intermediate' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' :
+                                                        'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
+                                                    }`}
+                                            >
+                                                {skill.name} ({skill.level})
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Latest Assessment Info */}
+                            {studentProfile?.latestAssessment && (
+                                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-500 dark:text-gray-400">Latest Assessment Score</span>
+                                        <span className="font-semibold text-primary-600 dark:text-primary-400">
+                                            {studentProfile.latestAssessment.score}%
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm mt-1">
+                                        <span className="text-gray-500 dark:text-gray-400">Taken On</span>
+                                        <span className="text-gray-600 dark:text-gray-300">
+                                            {new Date(studentProfile.latestAssessment.takenAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </CardBody>
                     </Card>
                 )}
