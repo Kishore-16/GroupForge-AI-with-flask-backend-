@@ -78,12 +78,32 @@ class AuthService:
             'profileCompleted': False,
             'createdAt': datetime.utcnow(),
             'updatedAt': datetime.utcnow(),
-            'institutionId': None,
-            'skills': {},
-            'assessmentHistory': [],
-            'githubConnected': False,
-            'resumeUploaded': False,
-            'teamAssignments': []
+            
+            # Core fields
+            'institutionId': '',
+            'department': '',
+            
+            # Student-specific fields (will be populated during profile completion)
+            'major': '' if role == 'student' else None,
+            'enrollmentNumber': '' if role == 'student' else None,
+            'bio': '',
+            'timezone': 'Asia/Kolkata',
+            'selectedSkills': [] if role == 'student' else None,
+            'skills': {} if role == 'student' else None,
+            'latestAssessment': {} if role == 'student' else None,
+            'tools': [] if role == 'student' else None,
+            'githubConnected': False if role == 'student' else None,
+            'githubUsername': '' if role == 'student' else None,
+            'userSkills': [] if role == 'student' else None,
+            'resumeUploaded': False if role == 'student' else None,
+            'attendedTest': False if role == 'student' else None,
+            'inTeam': False if role == 'student' else None,
+            'teamId': None if role == 'student' else None,
+            
+            # Faculty-specific fields
+            'designation': '' if role == 'faculty' else None,
+            'employeeId': '' if role == 'faculty' else None,
+            'contactNumber': '' if role == 'faculty' else None,
         }
 
         try:
@@ -177,14 +197,45 @@ class AuthService:
 
     @staticmethod
     def update_user_profile(user_id: str, update_data: Dict) -> Tuple[Dict, int]:
-        """Update user profile"""
+        """Update user profile - only allows specific fields based on role"""
         from bson import ObjectId
         try:
-            update_data['updatedAt'] = datetime.utcnow()
+            # Define allowed fields for students
+            ALLOWED_STUDENT_FIELDS = {
+                'displayName', 'institutionId', 'department', 'major', 
+                'enrollmentNumber', 'bio', 'timezone', 'selectedSkills', 
+                'skills', 'latestAssessment', 'tools', 'githubConnected', 
+                'githubUsername', 'userSkills', 'profileCompleted',
+                'attendedTest', 'inTeam', 'teamId', 'resumeUploaded'
+            }
+            
+            # Define allowed fields for faculty
+            ALLOWED_FACULTY_FIELDS = {
+                'displayName', 'institutionId', 'department', 'designation',
+                'employeeId', 'contactNumber', 'timezone', 'profileCompleted'
+            }
+            
+            # Get user to check role
+            user = users_collection.find_one({'_id': ObjectId(user_id)})
+            if not user:
+                return {
+                    'success': False,
+                    'message': 'User not found'
+                }, 404
+            
+            # Filter update_data to only allowed fields based on role
+            role = user.get('role', 'student')
+            allowed_fields = ALLOWED_STUDENT_FIELDS if role == 'student' else ALLOWED_FACULTY_FIELDS
+            
+            # Filter out any fields not in the whitelist
+            filtered_data = {k: v for k, v in update_data.items() if k in allowed_fields}
+            
+            # Add updatedAt timestamp
+            filtered_data['updatedAt'] = datetime.utcnow()
             
             result = users_collection.update_one(
                 {'_id': ObjectId(user_id)},
-                {'$set': update_data}
+                {'$set': filtered_data}
             )
 
             if result.matched_count == 0:
