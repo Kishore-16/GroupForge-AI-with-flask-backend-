@@ -223,7 +223,44 @@ Return ONLY the JSON object.`;
                 overallConfidence: scores.overallConfidence,
             };
 
-            console.warn('Firebase database removed - skill profile not persisted');
+            // Calculate overall score
+            const overallScore = (
+                scores.leadership.score +
+                scores.analyticalThinking.score +
+                scores.creativity.score +
+                scores.executionStrength.score +
+                scores.communication.score +
+                scores.teamwork.score
+            ) / 6;
+
+            // Persist to backend
+            try {
+                const token = await currentUser.getIdToken();
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/assessments/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        skills: {
+                            leadership: scores.leadership.score,
+                            analyticalThinking: scores.analyticalThinking.score,
+                            creativity: scores.creativity.score,
+                            executionStrength: scores.executionStrength.score,
+                            communication: scores.communication.score,
+                            teamwork: scores.teamwork.score
+                        },
+                        overallScore: overallScore
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to persist assessment to backend');
+                }
+            } catch (backendError) {
+                console.error('Error calling backend:', backendError);
+            }
 
             setCurrentSession(null);
             setIsAssessing(false);

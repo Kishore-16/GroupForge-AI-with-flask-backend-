@@ -6,7 +6,7 @@ import {
 import { Button, Card } from '../components/ui';
 import {
     getAllStrategiesComparison,
-    saveTeamsToFirestore,
+    saveTeams,
     TeamFormationStrategy
 } from '../services/teamFormation';
 import {
@@ -17,10 +17,26 @@ import {
 } from '../services/aiTeamFormation';
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/layout';
-import { Team } from '../types';
+import { Team, TeamMember } from '../types';
+
+// Extended Team interface with full member data for UI display
+interface TeamWithMembers {
+    id: string;
+    name?: string;
+    members: TeamMember[];
+    teamSkillVector: { [skillName: string]: number };
+    status: 'active' | 'needs_rebalance' | 'completed' | 'archived';
+    createdBy: string;
+    createdAt: Date | string;
+    courseId?: string;
+    projectId?: string;
+    formationMethod?: 'ai_generated' | 'manual' | 'hybrid';
+    balanceScore?: number;
+    aiRationale?: string;
+}
 
 interface StrategyResult {
-    teams: Team[];
+    teams: TeamWithMembers[];
     unassignedStudents: any[];
     averageBalanceScore: number;
     strategyRationale: string;
@@ -159,7 +175,7 @@ const TeamFormationPage: React.FC = () => {
 
         try {
             const results = await getAllStrategiesComparison(teamSize, currentUser!.uid);
-            setComparisonResults(results);
+            setComparisonResults(results as any as Record<TeamFormationStrategy, StrategyResult>);
         } catch (err: any) {
             setError(err.message || 'Failed to generate team formations');
         } finally {
@@ -181,7 +197,16 @@ const TeamFormationPage: React.FC = () => {
         setError(null);
 
         try {
-            await saveTeamsToFirestore(selectedResult.teams);
+            // Convert TeamWithMembers back to Team format for API
+            const teamsToSave: Team[] = selectedResult.teams.map(t => ({
+                ...t,
+                members: t.members.map(m => ({
+                    studentId: m.userId,
+                    role: m.role,
+                    joinedAt: m.joinedAt
+                }))
+            }));
+            await saveTeams(teamsToSave);
             setSuccess(`Successfully created ${selectedResult.teams.length} teams!`);
 
             // Reset after 2 seconds
@@ -558,14 +583,14 @@ const TeamFormationPage: React.FC = () => {
                                     <div className="text-right">
                                         <div className="text-sm text-gray-500 dark:text-gray-400">Average Balance Score</div>
                                         <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">
-                                            {(aiResult.teams.reduce((sum, t) => sum + t.balanceScore, 0) / aiResult.teams.length).toFixed(0)}
+                                            {(aiResult.teams.reduce((sum, t) => sum + (t.balanceScore ?? 0), 0) / aiResult.teams.length).toFixed(0)}
                                             <span className="text-2xl text-gray-400 dark:text-gray-500">/100</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {aiResult.teams.map((team, idx) => (
+                                    {((aiResult.teams as unknown) as TeamWithMembers[]).map((team, idx) => (
                                         <div
                                             key={team.id}
                                             className={`group relative rounded-2xl shadow-xl overflow-hidden transition-all hover:scale-102 ${swapFrom?.teamId === team.id ? 'ring-4 ring-purple-500 scale-105' : ''}`}
@@ -583,7 +608,7 @@ const TeamFormationPage: React.FC = () => {
                                                     </div>
                                                     <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl">
                                                         <BarChart3 className="w-5 h-5" />
-                                                        <span className="text-2xl font-bold">{team.balanceScore.toFixed(0)}</span>
+                                                        <span className="text-2xl font-bold">{(team.balanceScore ?? 0).toFixed(0)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -596,7 +621,7 @@ const TeamFormationPage: React.FC = () => {
                                                         className={`border-2 rounded-xl p-4 transition-all ${swapMode
                                                             ? 'cursor-pointer hover:bg-gradient-to-r hover:from-purple-50 dark:hover:from-purple-900/30 hover:to-pink-50 dark:hover:to-pink-900/20 hover:border-purple-300 dark:hover:border-purple-700'
                                                             : 'border-gray-200 dark:border-gray-700'
-                                                            } ${swapFrom?.studentId === member.userId ? 'bg-purple-100 dark:bg-purple-900/50 border-purple-400 dark:border-purple-600 shadow-lg' : 'bg-gray-50 dark:bg-gray-800/50'}`}
+                                                            } ${swapFrom?.studentId === member.userId || swapFrom?.studentId === member.userId ? 'bg-purple-100 dark:bg-purple-900/50 border-purple-400 dark:border-purple-600 shadow-lg' : 'bg-gray-50 dark:bg-gray-800/50'}`}
                                                         onClick={() => swapMode && handleSwapMember(team.id, member.userId)}
                                                     >
                                                         <div className="flex items-center justify-between mb-3">
@@ -622,8 +647,8 @@ const TeamFormationPage: React.FC = () => {
                                                                         {skill.replace(/([A-Z])/g, ' $1').trim()}
                                                                     </span>
                                                                     <div className="flex items-center gap-1">
-                                                                        <div className={`w-2 h-2 rounded-full ${getSkillColor(score)}`}></div>
-                                                                        <span className="text-sm font-bold text-gray-900 dark:text-white">{score}</span>
+                                                                        <div className={`w-2 h-2 rounded-full ${getSkillColor(Number(score))}`}></div>
+                                                                        <span className="text-sm font-bold text-gray-900 dark:text-white">{Number(score)}</span>
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -823,8 +848,8 @@ const TeamFormationPage: React.FC = () => {
                                                                             {skill.replace(/([A-Z])/g, ' $1').trim()}
                                                                         </span>
                                                                         <div className="flex items-center gap-1">
-                                                                            <div className={`w-2 h-2 rounded-full ${getSkillColor(score)}`}></div>
-                                                                            <span className="text-sm font-bold text-gray-900 dark:text-white">{score}</span>
+                                                                            <div className={`w-2 h-2 rounded-full ${getSkillColor(Number(score))}`}></div>
+                                                                            <span className="text-sm font-bold text-gray-900 dark:text-white">{Number(score)}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}

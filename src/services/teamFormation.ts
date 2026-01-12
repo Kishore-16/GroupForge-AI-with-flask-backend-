@@ -6,6 +6,7 @@ import {
     SkillSummary
 } from '../types';
 import { teamFormationModel } from '../config/gemini';
+import { apiFetch } from './api';
 
 export type TeamFormationStrategy = 'balanced' | 'complementary' | 'role-based';
 
@@ -17,8 +18,9 @@ interface StudentWithSkills {
 
 // Fetch all students enrolled in a course with their skills
 export async function getStudentsForCourse(_courseId: string): Promise<StudentWithSkills[]> {
-    console.warn('Firebase database removed - returning empty student list');
-    return [];
+    // For now, just return all eligible students regardless of course
+    // You can add courseId filtering in the backend later if needed
+    return await getAllStudentsWithAssessments();
 }
 
 // Calculate team balance score (0-100)
@@ -78,8 +80,9 @@ function greedyTeamFormation(
             formationMethod: 'ai_generated',
             createdAt: new Date(),
             createdBy: '',
-            status: 'draft',
+            status: 'active',
             balanceScore: 0,
+            teamSkillVector: {}
         });
     }
 
@@ -87,10 +90,8 @@ function greedyTeamFormation(
     for (let i = 0; i < Math.min(numTeams, sortedStudents.length); i++) {
         const student = sortedStudents[i];
         teams[i].members.push({
-            userId: student.uid,
-            displayName: student.displayName,
+            studentId: student.uid,
             role: 'leader',
-            skillSnapshot: student.skills,
             joinedAt: new Date(),
         });
         assignedStudents.add(student.uid);
@@ -107,11 +108,10 @@ function greedyTeamFormation(
         for (let i = 0; i < teams.length; i++) {
             if (teams[i].members.length >= maxTeamSize) continue;
 
-            const currentMembers = teams[i].members.map(m => ({
-                uid: m.userId,
-                displayName: m.displayName,
-                skills: m.skillSnapshot,
-            }));
+            const currentMembers = teams[i].members.map(m => {
+                const st = students.find(s => s.uid === m.studentId);
+                return st ? { uid: st.uid, displayName: st.displayName, skills: st.skills } : null;
+            }).filter(Boolean) as StudentWithSkills[];
 
             const withNewMember = [...currentMembers, student];
             const improvement = calculateTeamBalance(withNewMember) - calculateTeamBalance(currentMembers);
@@ -123,21 +123,18 @@ function greedyTeamFormation(
         }
 
         teams[bestTeamIndex].members.push({
-            userId: student.uid,
-            displayName: student.displayName,
+            studentId: student.uid,
             role: 'contributor',
-            skillSnapshot: student.skills,
             joinedAt: new Date(),
         });
     }
 
     // Calculate final balance scores
     for (const team of teams) {
-        const membersWithSkills = team.members.map(m => ({
-            uid: m.userId,
-            displayName: m.displayName,
-            skills: m.skillSnapshot,
-        }));
+        const membersWithSkills = team.members.map(m => {
+            const st = students.find(s => s.uid === m.studentId);
+            return st ? { uid: st.uid, displayName: st.displayName, skills: st.skills } : null;
+        }).filter(Boolean) as StudentWithSkills[];
         team.balanceScore = calculateTeamBalance(membersWithSkills);
     }
 
@@ -149,7 +146,7 @@ export async function formTeamsWithAI(
     config: TeamFormationConfig,
     facultyId: string
 ): Promise<TeamFormationResult> {
-    const students = await getStudentsForCourse(config.courseId);
+    const students = await getStudentsForCourse(config.courseId || 'default');
 
     if (students.length < config.minTeamSize) {
         throw new Error('Not enough students to form teams');
@@ -164,10 +161,10 @@ export async function formTeamsWithAI(
 Current team configuration:
 ${JSON.stringify(initialTeams.map(t => ({
         name: t.name,
-        members: t.members.map(m => ({
-            name: m.displayName,
-            skills: m.skillSnapshot,
-        })),
+        members: t.members.map(m => {
+            const st = students.find(s => s.uid === m.studentId);
+            return st ? { name: st.displayName, skills: st.skills } : { name: 'Unknown', skills: {} };
+        }),
         balanceScore: t.balanceScore,
     })), null, 2)}
 
@@ -206,7 +203,8 @@ Return ONLY the JSON object.`;
             // Apply swap recommendations if beneficial
             // For now, just attach the AI rationale
             for (const team of initialTeams) {
-                team.aiRationale = aiAnalysis.teamRationales?.[team.name] || '';
+                const teamName = team.name || `Team ${initialTeams.indexOf(team) + 1}`;
+                team.aiRationale = aiAnalysis.teamRationales?.[teamName] || '';
                 team.createdBy = facultyId;
             }
 
@@ -214,7 +212,7 @@ Return ONLY the JSON object.`;
                 teams: initialTeams,
                 unassignedStudents: [],
                 overallBalanceScore: aiAnalysis.overallScore ||
-                    initialTeams.reduce((sum, t) => sum + t.balanceScore, 0) / initialTeams.length,
+                    initialTeams.reduce((sum, t) => sum + (t.balanceScore || 0), 0) / initialTeams.length,
                 formationInsights: aiAnalysis.insights || 'Teams formed using AI-assisted matching.',
             };
         }
@@ -226,14 +224,35 @@ Return ONLY the JSON object.`;
     return {
         teams: initialTeams,
         unassignedStudents: [],
-        overallBalanceScore: initialTeams.reduce((sum, t) => sum + t.balanceScore, 0) / initialTeams.length,
+        overallBalanceScore: initialTeams.reduce((sum, t) => sum + (t.balanceScore || 0), 0) / initialTeams.length,
         formationInsights: 'Teams formed using balanced skill distribution algorithm.',
     };
 }
 
-// Save teams - Firebase removed
-export async function saveTeams(_teams: Team[]): Promise<void> {
-    console.warn('Firebase database removed - teams not persisted');
+// Save teams to backend
+export async function saveTeams(teams: Team[]): Promise<void> {
+    try {
+        // Save each team to backend using apiFetch (auto-adds JWT)
+        for (const team of teams) {
+            const payload = {
+                teamName: team.name || `Team ${teams.indexOf(team) + 1}`,
+                members: team.members.map(m => ({
+                    studentId: m.studentId,
+                    role: m.role,
+                    joinedAt: m.joinedAt
+                }))
+            };
+
+            await apiFetch<{ success: boolean; message: string; data: any }>('/teams/form', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+        console.log(`✓ Successfully saved ${teams.length} teams`);
+    } catch (error) {
+        console.error('Error saving teams:', error);
+        throw error;
+    }
 }
 
 // Get teams for a course - Firebase removed
@@ -249,8 +268,60 @@ export async function saveTeamsToFirestore(_teams: Team[]): Promise<void> {
 
 // Get all students with completed assessments
 async function getAllStudentsWithAssessments(): Promise<StudentWithSkills[]> {
-    console.warn('Firebase database removed - returning empty student list');
-    return [];
+    try {
+        // Fetch eligible students from backend using apiFetch (auto-adds JWT)
+        const data = await apiFetch<{ success: boolean; data: any[]; count: number }>('/teams/eligible-students');
+        const eligibleStudents = data.data || [];
+
+        console.log(`✓ Found ${eligibleStudents.length} eligible students from backend`);
+
+        // Map backend student data to StudentWithSkills format
+        return eligibleStudents.map((student: any) => {
+            const backendSkills = student.skills || {};
+
+            // Calculate average of all technical skills or use 50 as default
+            const skillValues = Object.values(backendSkills).filter(v => typeof v === 'number') as number[];
+            const avgSkill = skillValues.length > 0
+                ? skillValues.reduce((sum, val) => sum + val, 0) / skillValues.length
+                : 50;
+
+            // For team formation, we use the technical skill scores
+            // as approximations for soft skills
+            return {
+                uid: student.id,
+                displayName: student.displayName || 'Unknown',
+                skills: {
+                    leadership: backendSkills.leadership || avgSkill,
+                    analyticalThinking: backendSkills.analyticalThinking || backendSkills.python || avgSkill,
+                    creativity: backendSkills.creativity || backendSkills.frontend || avgSkill,
+                    executionStrength: backendSkills.executionStrength || backendSkills.flask || avgSkill,
+                    communication: backendSkills.communication || avgSkill,
+                    teamwork: backendSkills.teamwork || avgSkill
+                }
+            };
+        });
+    } catch (error) {
+        console.error('Error fetching students with assessments:', error);
+        return [];
+    }
+}
+
+// Helper function to enrich team members with full student data for UI display
+function enrichTeamMembers(teams: Team[], students: StudentWithSkills[]): Team[] {
+    return teams.map(team => ({
+        ...team,
+        members: team.members.map((member: any) => {
+            const student = students.find(s => s.uid === (member.studentId || member.userId));
+            return {
+                userId: member.studentId || member.userId,
+                studentId: member.studentId || member.userId,
+                displayName: student?.displayName || 'Unknown Student',
+                role: member.role,
+                skillSnapshot: student?.skills || {},
+                joinedAt: member.joinedAt,
+            };
+        })
+    }));
 }
 
 // Balanced strategy: Snake draft distribution
@@ -275,8 +346,9 @@ function balancedStrategy(students: StudentWithSkills[], teamSize: number, facul
             formationMethod: 'ai_generated',
             createdAt: new Date(),
             createdBy: facultyId,
-            status: 'draft',
+            status: 'active',
             balanceScore: 0,
+            teamSkillVector: {}
         });
     }
 
@@ -286,10 +358,8 @@ function balancedStrategy(students: StudentWithSkills[], teamSize: number, facul
 
     for (const student of sortedStudents) {
         teams[teamIndex].members.push({
-            userId: student.uid,
-            displayName: student.displayName,
+            studentId: student.uid,
             role: teams[teamIndex].members.length === 0 ? 'leader' : 'contributor',
-            skillSnapshot: student.skills,
             joinedAt: new Date(),
         });
 
@@ -305,11 +375,10 @@ function balancedStrategy(students: StudentWithSkills[], teamSize: number, facul
 
     // Calculate balance scores
     for (const team of teams) {
-        const membersWithSkills = team.members.map(m => ({
-            uid: m.userId,
-            displayName: m.displayName,
-            skills: m.skillSnapshot,
-        }));
+        const membersWithSkills = team.members.map(m => {
+            const st = students.find(s => s.uid === m.studentId);
+            return st ? { uid: st.uid, displayName: st.displayName, skills: st.skills } : null;
+        }).filter(Boolean) as StudentWithSkills[];
         team.balanceScore = calculateTeamBalance(membersWithSkills);
     }
 
@@ -331,8 +400,9 @@ function complementaryStrategy(students: StudentWithSkills[], teamSize: number, 
             formationMethod: 'ai_generated',
             createdAt: new Date(),
             createdBy: facultyId,
-            status: 'draft',
+            status: 'active',
             balanceScore: 0,
+            teamSkillVector: {}
         });
     }
 
@@ -363,10 +433,8 @@ function complementaryStrategy(students: StudentWithSkills[], teamSize: number, 
     for (const skill of skills) {
         for (const student of studentsByPrimarySkill[skill]) {
             teams[teamIndex % numTeams].members.push({
-                userId: student.uid,
-                displayName: student.displayName,
+                studentId: student.uid,
                 role: skill === 'leadership' ? 'leader' : 'contributor',
-                skillSnapshot: student.skills,
                 joinedAt: new Date(),
             });
             teamIndex++;
@@ -375,11 +443,10 @@ function complementaryStrategy(students: StudentWithSkills[], teamSize: number, 
 
     // Calculate balance scores
     for (const team of teams) {
-        const membersWithSkills = team.members.map(m => ({
-            uid: m.userId,
-            displayName: m.displayName,
-            skills: m.skillSnapshot,
-        }));
+        const membersWithSkills = team.members.map(m => {
+            const st = students.find(s => s.uid === m.studentId);
+            return st ? { uid: st.uid, displayName: st.displayName, skills: st.skills } : null;
+        }).filter(Boolean) as StudentWithSkills[];
         team.balanceScore = calculateTeamBalance(membersWithSkills);
     }
 
@@ -401,8 +468,9 @@ function roleBasedStrategy(students: StudentWithSkills[], teamSize: number, facu
             formationMethod: 'ai_generated',
             createdAt: new Date(),
             createdBy: facultyId,
-            status: 'draft',
+            status: 'active',
             balanceScore: 0,
+            teamSkillVector: {}
         });
     }
 
@@ -418,10 +486,8 @@ function roleBasedStrategy(students: StudentWithSkills[], teamSize: number, facu
     for (let i = 0; i < numTeams && i < leadershipSorted.length; i++) {
         const student = leadershipSorted[i];
         teams[i].members.push({
-            userId: student.uid,
-            displayName: student.displayName,
+            studentId: student.uid,
             role: 'leader',
-            skillSnapshot: student.skills,
             joinedAt: new Date(),
         });
         assigned.add(student.uid);
@@ -432,10 +498,8 @@ function roleBasedStrategy(students: StudentWithSkills[], teamSize: number, facu
     for (const student of analyticalSorted) {
         if (!assigned.has(student.uid) && teams[teamIndex].members.length < teamSize) {
             teams[teamIndex].members.push({
-                userId: student.uid,
-                displayName: student.displayName,
+                studentId: student.uid,
                 role: 'specialist',
-                skillSnapshot: student.skills,
                 joinedAt: new Date(),
             });
             assigned.add(student.uid);
@@ -448,10 +512,8 @@ function roleBasedStrategy(students: StudentWithSkills[], teamSize: number, facu
     for (const student of creativitySorted) {
         if (!assigned.has(student.uid) && teams[teamIndex].members.length < teamSize) {
             teams[teamIndex].members.push({
-                userId: student.uid,
-                displayName: student.displayName,
+                studentId: student.uid,
                 role: 'specialist',
-                skillSnapshot: student.skills,
                 joinedAt: new Date(),
             });
             assigned.add(student.uid);
@@ -464,10 +526,8 @@ function roleBasedStrategy(students: StudentWithSkills[], teamSize: number, facu
     for (const student of executionSorted) {
         if (!assigned.has(student.uid) && teams[teamIndex].members.length < teamSize) {
             teams[teamIndex].members.push({
-                userId: student.uid,
-                displayName: student.displayName,
+                studentId: student.uid,
                 role: 'contributor',
-                skillSnapshot: student.skills,
                 joinedAt: new Date(),
             });
             assigned.add(student.uid);
@@ -477,11 +537,10 @@ function roleBasedStrategy(students: StudentWithSkills[], teamSize: number, facu
 
     // Calculate balance scores
     for (const team of teams) {
-        const membersWithSkills = team.members.map(m => ({
-            uid: m.userId,
-            displayName: m.displayName,
-            skills: m.skillSnapshot,
-        }));
+        const membersWithSkills = team.members.map(m => {
+            const st = students.find(s => s.uid === m.studentId);
+            return st ? { uid: st.uid, displayName: st.displayName, skills: st.skills } : null;
+        }).filter(Boolean) as StudentWithSkills[];
         team.balanceScore = calculateTeamBalance(membersWithSkills);
     }
 
@@ -504,27 +563,27 @@ export async function getAllStrategiesComparison(
         throw new Error(`Not enough students with completed assessments. Need at least ${teamSize}, found ${students.length}`);
     }
 
-    const balancedTeams = balancedStrategy(students, teamSize, facultyId);
-    const complementaryTeams = complementaryStrategy(students, teamSize, facultyId);
-    const roleBasedTeams = roleBasedStrategy(students, teamSize, facultyId);
+    const balancedTeams = enrichTeamMembers(balancedStrategy(students, teamSize, facultyId), students);
+    const complementaryTeams = enrichTeamMembers(complementaryStrategy(students, teamSize, facultyId), students);
+    const roleBasedTeams = enrichTeamMembers(roleBasedStrategy(students, teamSize, facultyId), students);
 
     return {
         balanced: {
             teams: balancedTeams,
             unassignedStudents: [],
-            averageBalanceScore: balancedTeams.reduce((sum, t) => sum + t.balanceScore, 0) / balancedTeams.length,
+            averageBalanceScore: balancedTeams.reduce((sum, t) => sum + (t.balanceScore || 0), 0) / balancedTeams.length,
             strategyRationale: 'Snake draft ensures even distribution of talent across all teams. High performers are distributed first, followed by mid-tier and lower performers in alternating order.'
         },
         complementary: {
             teams: complementaryTeams,
             unassignedStudents: [],
-            averageBalanceScore: complementaryTeams.reduce((sum, t) => sum + t.balanceScore, 0) / complementaryTeams.length,
+            averageBalanceScore: complementaryTeams.reduce((sum, t) => sum + (t.balanceScore || 0), 0) / complementaryTeams.length,
             strategyRationale: 'Each team gets specialists from different skill areas for comprehensive coverage. Teams have diverse perspectives with clear skill strengths.'
         },
         'role-based': {
             teams: roleBasedTeams,
             unassignedStudents: [],
-            averageBalanceScore: roleBasedTeams.reduce((sum, t) => sum + t.balanceScore, 0) / roleBasedTeams.length,
+            averageBalanceScore: roleBasedTeams.reduce((sum, t) => sum + (t.balanceScore || 0), 0) / roleBasedTeams.length,
             strategyRationale: 'Explicit role assignments based on primary strengths. Each member has a clear role: Leader, Analyst, Creative, or Executor.'
         }
     };

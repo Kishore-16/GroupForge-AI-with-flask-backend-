@@ -117,15 +117,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             setUserProfile(mapToStudentProfile(response.user));
                         } else {
                             setUserProfile({
+                                ...response.user,
                                 uid: response.user.id,
                                 email: response.user.email,
                                 displayName: response.user.displayName,
                                 role: response.user.role as UserRole,
-                                institutionId: response.user.institutionId || '',
                                 profileCompleted: response.user.profileCompleted || false,
                                 createdAt: new Date(response.user.createdAt),
-                                updatedAt: new Date(response.user.updatedAt),
-                                ...response.user
+                                updatedAt: new Date(response.user.updatedAt)
                             } as any);
                         }
                     }
@@ -182,15 +181,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 setUserProfile(mapToStudentProfile(response.user));
             } else {
                 setUserProfile({
+                    ...response.user,
                     uid: response.user.id,
                     email: response.user.email,
                     displayName: response.user.displayName,
                     role: response.user.role as UserRole,
-                    institutionId: response.user.institutionId || '',
                     profileCompleted: response.user.profileCompleted || false,
                     createdAt: new Date(),
-                    updatedAt: new Date(),
-                    ...response.user
+                    updatedAt: new Date()
                 } as any);
             }
         } catch (err: any) {
@@ -320,15 +318,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     setUserProfile(mapToStudentProfile(response.user));
                 } else {
                     setUserProfile({
+                        ...response.user,
                         uid: response.user.id,
                         email: response.user.email,
                         displayName: response.user.displayName,
                         role: response.user.role as UserRole,
-                        institutionId: response.user.institutionId || '',
                         profileCompleted: response.user.profileCompleted || false,
                         createdAt: new Date(response.user.createdAt),
-                        updatedAt: new Date(response.user.updatedAt),
-                        ...response.user
+                        updatedAt: new Date(response.user.updatedAt)
                     } as any);
                 }
             }

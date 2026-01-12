@@ -2,6 +2,7 @@
 
 import { teamFormationModel } from '../config/gemini';
 import { Team } from '../types';
+import { apiFetch } from './api';
 
 // ============================================================================
 // TYPES
@@ -79,20 +80,56 @@ interface FormationJob {
 // Clean, compressed, decision-focused JSON - no PII
 // ============================================================================
 
-async function buildFormationContext(_teamSize: number, _cohort: string = 'default'): Promise<TeamFormationInput> {
-    console.warn('Firebase database removed - returning empty formation context');
-    return {
-        cohort: _cohort,
-        teamSize: _teamSize,
-        skills: [],
-        students: [],
-        constraints: {
-            minSkillCoverage: true,
-            avoidSimilarProfiles: true,
-            maxLeadersPerTeam: 1,
-            minBalanceScore: 60,
-        },
-    };
+async function buildFormationContext(teamSize: number, cohort: string = 'default'): Promise<TeamFormationInput> {
+    try {
+        // Fetch eligible students from backend using apiFetch (auto-adds JWT)
+        const data = await apiFetch<{ success: boolean; data: any[]; count: number }>('/teams/eligible-students');
+        const eligibleStudents = data.data || [];
+
+        // Map backend student data to StudentContext format
+        const students: StudentContext[] = eligibleStudents.map((student: any) => {
+            const skills = student.skills || {};
+            return {
+                id: student.id,
+                skills: {
+                    leadership: skills.leadership || 50,
+                    analyticalThinking: skills.analyticalThinking || 50,
+                    creativity: skills.creativity || 50,
+                    executionStrength: skills.executionStrength || 50,
+                    communication: skills.communication || 50,
+                    teamwork: skills.teamwork || 50
+                },
+                confidence: 0.8
+            };
+        });
+
+        return {
+            cohort,
+            teamSize,
+            skills: ['leadership', 'analyticalThinking', 'creativity', 'executionStrength', 'communication', 'teamwork'],
+            students,
+            constraints: {
+                minSkillCoverage: true,
+                avoidSimilarProfiles: true,
+                maxLeadersPerTeam: 1,
+                minBalanceScore: 60,
+            },
+        };
+    } catch (error) {
+        console.error('Error building formation context:', error);
+        return {
+            cohort,
+            teamSize,
+            skills: [],
+            students: [],
+            constraints: {
+                minSkillCoverage: true,
+                avoidSimilarProfiles: true,
+                maxLeadersPerTeam: 1,
+                minBalanceScore: 60,
+            },
+        };
+    }
 }
 
 // ============================================================================
@@ -374,25 +411,17 @@ function convertToTeams(
 ): Team[] {
     const studentMap = new Map(input.students.map(s => [s.id, s]));
 
-    // Fetch display names (we need to do this separately to maintain PII separation)
+    // Create teams with enriched member data for UI display
     return output.teams.map((aiTeam, index) => {
-        const members = aiTeam.members.map(id => {
-            const student = studentMap.get(id);
+        // Enrich members with full student data for UI
+        const enrichedMembers = aiTeam.members.map(id => {
+            const studentContext = studentMap.get(id);
             return {
                 userId: id,
-                displayName: id, // Will be resolved later with actual names
+                studentId: id, // Keep for backend compatibility
+                displayName: `Student ${id.slice(-4)}`, // Placeholder - will be resolved
                 role: mapAIRoleToTeamRole(aiTeam.roles[id]),
-                skillSnapshot: student ? {
-                    leadership: student.skills.leadership,
-                    analyticalThinking: student.skills.analyticalThinking,
-                    creativity: student.skills.creativity,
-                    executionStrength: student.skills.executionStrength,
-                } : {
-                    leadership: 50,
-                    analyticalThinking: 50,
-                    creativity: 50,
-                    executionStrength: 50,
-                },
+                skillSnapshot: studentContext?.skills || {},
                 joinedAt: new Date(),
             };
         });
@@ -404,11 +433,12 @@ function convertToTeams(
             id: `team_ai_${Date.now()}_${index}`,
             name: aiTeam.teamName,
             courseId: input.cohort,
-            members,
+            members: enrichedMembers as any, // Cast to avoid type conflict
+            teamSkillVector: {}, // Will be calculated by backend
             formationMethod: 'ai_generated' as const,
             createdAt: new Date(),
             createdBy: facultyId,
-            status: 'draft' as const,
+            status: 'active' as const,
             balanceScore,
             aiRationale: aiTeam.reasoning,
         };
@@ -498,9 +528,38 @@ export async function formTeamsWithAI(
     };
 }
 
-// Resolve display names - Firebase removed
-async function resolveDisplayNames(_teams: Team[]): Promise<void> {
-    console.warn('Firebase database removed - display names not resolved');
+// Resolve display names from backend
+async function resolveDisplayNames(teams: Team[]): Promise<void> {
+    try {
+        // Get all unique student IDs
+        const studentIds = new Set<string>();
+        teams.forEach(team => {
+            team.members.forEach((member: any) => {
+                if (member.userId) {
+                    studentIds.add(member.userId);
+                }
+            });
+        });
+
+        // Fetch student data from backend
+        const response = await apiFetch<{ success: boolean; data: any[] }>('/teams/eligible-students');
+        const students = response.data || [];
+
+        // Create a map of student ID to display name
+        const studentMap = new Map(students.map((s: any) => [s.id, s.displayName || s.email]));
+
+        // Update member display names
+        teams.forEach(team => {
+            team.members.forEach((member: any) => {
+                if (member.userId && studentMap.has(member.userId)) {
+                    member.displayName = studentMap.get(member.userId);
+                }
+            });
+        });
+    } catch (error) {
+        console.warn('Failed to resolve display names:', error);
+        // Keep placeholder names if fetch fails
+    }
 }
 
 // ============================================================================
@@ -509,10 +568,31 @@ async function resolveDisplayNames(_teams: Team[]): Promise<void> {
 // ============================================================================
 
 export async function approveAndSaveTeams(
-    _job: FormationJob,
+    job: FormationJob,
     _facultyId: string
 ): Promise<void> {
-    console.warn('Firebase database removed - teams not saved');
+    try {
+        // Save each team to backend using apiFetch (auto-adds JWT)
+        for (const team of job.teams) {
+            const payload = {
+                teamName: team.name || 'Unnamed Team',
+                members: team.members.map((m: any) => ({
+                    studentId: m.studentId || m.userId, // Handle both field names
+                    role: m.role,
+                    joinedAt: m.joinedAt
+                }))
+            };
+
+            await apiFetch<{ success: boolean; message: string; data: any }>('/teams/form', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+        console.log(`✓ Successfully saved ${job.teams.length} AI-formed teams`);
+    } catch (error) {
+        console.error('Error approving and saving teams:', error);
+        throw error;
+    }
 }
 
 export async function rejectFormation(
@@ -543,7 +623,10 @@ export function swapTeamMembers(
         throw new Error('Team not found');
     }
 
-    const memberIndex = fromTeam.members.findIndex(m => m.userId === studentId);
+    // Find member by either studentId or userId
+    const memberIndex = fromTeam.members.findIndex((m: any) =>
+        m.studentId === studentId || m.userId === studentId
+    );
     if (memberIndex === -1) {
         throw new Error('Student not found in source team');
     }
@@ -588,7 +671,7 @@ export async function getAITeamFormation(
     const result = await formTeamsWithAI(teamSize, facultyId);
 
     const avgBalance = result.teams.length > 0
-        ? result.teams.reduce((sum, t) => sum + t.balanceScore, 0) / result.teams.length
+        ? result.teams.reduce((sum, t) => sum + (t.balanceScore || 0), 0) / result.teams.length
         : 0;
 
     return {

@@ -4,7 +4,7 @@ import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button, SkillBar } from '../components/ui';
 import { getStudentTeam } from '../services';
 import { Team, TeamMemberRef } from '../types';
-import { StudentProfile, isStudentProfile } from '../types';
+import { StudentProfile } from '../types';
 import {
     Users,
     Award,
@@ -332,7 +332,7 @@ function TeamCard({ team, currentUserId }: { team: TeamWithDetails; currentUserI
                                 <MemberCard
                                     key={member.uid}
                                     member={member}
-                                    teamMember={team.members.find(m => m.userId === member.uid)!}
+                                    teamMember={team.members.find(m => (m as any).studentId === member.uid || (m as any).userId === member.uid)!}
                                     isCurrentUser={member.uid === currentUserId}
                                 />
                             ))}
@@ -445,33 +445,4 @@ function MemberCard({
             </div>
         </div>
     );
-}
-
-// Helper function to calculate team skill averages from member profiles (UserPlan.md)
-function calculateTeamSkillAverages(members: StudentProfile[]): Record<string, number> {
-    if (members.length === 0) {
-        return {};
-    }
-
-    // Collect all skill names from all members
-    const allSkills = new Set<string>();
-    members.forEach(member => {
-        if (member.skills && typeof member.skills === 'object') {
-            Object.keys(member.skills).forEach(skill => allSkills.add(skill));
-        }
-    });
-
-    // Calculate averages for each skill
-    const averages: Record<string, number> = {};
-    allSkills.forEach(skill => {
-        const scores = members
-            .map(m => m.skills?.[skill] as number)
-            .filter(s => typeof s === 'number');
-        
-        if (scores.length > 0) {
-            averages[skill] = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-        }
-    });
-
-    return averages;
 }

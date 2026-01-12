@@ -1,5 +1,9 @@
+/* CSS linter disable for Tailwind directives */
+/* stylelint-disable-next-line */
 @tailwind base;
+/* stylelint-disable-next-line */
 @tailwind components;
+/* stylelint-disable-next-line */
 @tailwind utilities;
 
 * {

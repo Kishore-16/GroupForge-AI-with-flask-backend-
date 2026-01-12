@@ -11,12 +11,28 @@ export class ApiError extends Error {
     }
 }
 
+// Helper to get JWT token from localStorage
+export function getAuthToken(): string | null {
+    return localStorage.getItem('accessToken');
+}
+
 function buildHeaders(init?: RequestInit): HeadersInit {
     // Preserve caller-provided headers (e.g., for FormData) and add JSON defaults when appropriate.
     const hasContentType = init?.headers && 'Content-Type' in (init.headers as any);
-    if (hasContentType) return init!.headers as HeadersInit;
-    if (init?.body && init.body instanceof FormData) return init.headers ?? {};
-    return { 'Content-Type': 'application/json', ...(init?.headers ?? {}) };
+    const baseHeaders: HeadersInit = hasContentType ? (init!.headers as HeadersInit) : 
+        (init?.body && init.body instanceof FormData) ? (init.headers ?? {}) : 
+        { 'Content-Type': 'application/json', ...(init?.headers ?? {}) };
+    
+    // Add Authorization header if token exists
+    const token = getAuthToken();
+    if (token) {
+        return {
+            ...baseHeaders,
+            'Authorization': `Bearer ${token}`
+        };
+    }
+    
+    return baseHeaders;
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
