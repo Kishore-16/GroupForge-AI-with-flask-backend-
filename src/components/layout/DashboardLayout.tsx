@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../../contexts';
+import { RealTimeNotifications } from '../ui';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -80,6 +81,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {children}
                 </div>
             </main>
+
+            {/* Real-time Notifications */}
+            <RealTimeNotifications />
         </div>
     );
 }

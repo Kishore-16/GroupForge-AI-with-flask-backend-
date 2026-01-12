@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts';
+import { useAuth, useWebSocket } from '../contexts';
 import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button, Input } from '../components/ui';
 import { authApi } from '../services/authApi';
@@ -66,6 +66,7 @@ const FACULTY_STEPS = [
 
 export function ProfilePage() {
     const { currentUser, userProfile, loading: authLoading, refreshUserProfile } = useAuth();
+    const webSocket = useWebSocket();
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(1);
     const [isEditing, setIsEditing] = useState(false);
@@ -73,6 +74,18 @@ export function ProfilePage() {
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+
+    // Listen for real-time profile updates
+    useEffect(() => {
+        webSocket.onProfileUpdate((data) => {
+            console.log('📬 Profile updated via WebSocket, refreshing...', data);
+            refreshUserProfile();
+        });
+
+        return () => {
+            webSocket.offProfileUpdate();
+        };
+    }, [webSocket, refreshUserProfile]);
 
     const [formData, setFormData] = useState<ProfileFormData>({
         displayName: '',

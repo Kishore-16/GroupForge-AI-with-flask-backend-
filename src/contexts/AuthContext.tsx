@@ -6,6 +6,7 @@ import { authApi } from '../services/authApi';
 interface AuthContextType {
     currentUser: any | null;
     userProfile: User | null;
+    token: string | null;
     loading: boolean;
     error: string | null;
     signInWithGoogle: () => Promise<void>;
@@ -15,6 +16,7 @@ interface AuthContextType {
     logout: () => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
     refreshUserProfile: () => Promise<void>;
+    getToken: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -95,8 +97,45 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const [currentUser, setCurrentUser] = useState<any | null>(null);
     const [userProfile, setUserProfile] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Centralized helper to fetch fresh profile with a given token
+    const fetchAndSetProfile = async (accessToken: string, manageLoading: boolean = false) => {
+        if (!accessToken) return;
+        try {
+            if (manageLoading) setLoading(true);
+            const response = await authApi.getProfile(accessToken);
+            if (response.success && response.user) {
+                setCurrentUser({
+                    uid: response.user.id,
+                    email: response.user.email,
+                    displayName: response.user.displayName
+                });
+
+                if (response.user.role === 'student') {
+                    setUserProfile(mapToStudentProfile(response.user));
+                } else {
+                    setUserProfile({
+                        ...response.user,
+                        uid: response.user.id,
+                        email: response.user.email,
+                        displayName: response.user.displayName,
+                        role: response.user.role as UserRole,
+                        profileCompleted: response.user.profileCompleted || false,
+                        createdAt: new Date(response.user.createdAt),
+                        updatedAt: new Date(response.user.updatedAt)
+                    } as any);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch profile:', err);
+            throw err;
+        } finally {
+            if (manageLoading) setLoading(false);
+        }
+    };
 
     // Check for existing tokens on mount
     useEffect(() => {
@@ -104,36 +143,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
             try {
                 const accessToken = localStorage.getItem('accessToken');
                 if (accessToken) {
-                    const response = await authApi.getProfile(accessToken);
-                    if (response.success && response.user) {
-                        setCurrentUser({
-                            uid: response.user.id,
-                            email: response.user.email,
-                            displayName: response.user.displayName
-                        });
-
-                        // Map based on role
-                        if (response.user.role === 'student') {
-                            setUserProfile(mapToStudentProfile(response.user));
-                        } else {
-                            setUserProfile({
-                                ...response.user,
-                                uid: response.user.id,
-                                email: response.user.email,
-                                displayName: response.user.displayName,
-                                role: response.user.role as UserRole,
-                                profileCompleted: response.user.profileCompleted || false,
-                                createdAt: new Date(response.user.createdAt),
-                                updatedAt: new Date(response.user.updatedAt)
-                            } as any);
-                        }
-                    }
+                    setToken(accessToken);
+                    await fetchAndSetProfile(accessToken);
                 }
             } catch (err) {
                 console.error('Failed to restore auth:', err);
                 // Clear invalid tokens
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
+                setToken(null);
             } finally {
                 setLoading(false);
             }
@@ -141,6 +159,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         checkAuth();
     }, []);
+
+    // Whenever a new token appears and we don't yet have a profile, fetch it
+    useEffect(() => {
+        if (token && !userProfile) {
+            fetchAndSetProfile(token, true).catch(() => {
+                // Errors are already logged inside fetchAndSetProfile
+            });
+        }
+    }, [token, userProfile]);
 
     async function signInWithGoogle() {
         setError('Google authentication is not yet implemented');
@@ -165,32 +192,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // Store tokens
             localStorage.setItem('accessToken', response.accessToken);
+            setToken(response.accessToken);
             if (response.refreshToken) {
                 localStorage.setItem('refreshToken', response.refreshToken);
             }
 
-            // Set user state
-            setCurrentUser({
-                uid: response.user.id,
-                email: response.user.email,
-                displayName: response.user.displayName
-            });
-
-            // Map profile based on role (Following UserPlan.md)
-            if (response.user.role === 'student') {
-                setUserProfile(mapToStudentProfile(response.user));
-            } else {
-                setUserProfile({
-                    ...response.user,
-                    uid: response.user.id,
-                    email: response.user.email,
-                    displayName: response.user.displayName,
-                    role: response.user.role as UserRole,
-                    profileCompleted: response.user.profileCompleted || false,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                } as any);
-            }
+            // Always fetch fresh profile from backend to avoid stale data
+            await fetchAndSetProfile(response.accessToken);
         } catch (err: any) {
             const errorMessage = err.message || 'Login failed';
             setError(errorMessage);
@@ -223,58 +231,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // Store tokens
             localStorage.setItem('accessToken', response.accessToken);
+            setToken(response.accessToken);
             if (response.refreshToken) {
                 localStorage.setItem('refreshToken', response.refreshToken);
             }
 
-            // Set user state
-            setCurrentUser({
-                uid: response.user.id,
-                email: response.user.email,
-                displayName: response.user.displayName
-            });
-
-            // Create initial profile based on role (Following UserPlan.md)
-            if (role === 'student') {
-                const initialStudentProfile: StudentProfile = {
-                    uid: response.user.id,
-                    email: response.user.email,
-                    displayName: response.user.displayName,
-                    role: 'student',
-                    institutionId: '',
-                    profileCompleted: false,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    enrollmentNumber: '',
-                    department: '',
-                    major: '',
-                    selectedSkills: [],
-                    skills: {},
-                    attendedTest: false,
-                    inTeam: false,
-                    teamId: null,
-                    githubConnected: false,
-                    githubUsername: '',
-                    resumeUploaded: false,
-                    bio: '',
-                    timezone: 'Asia/Calcutta',
-                    tools: [],
-                    assessmentHistory: [],
-                    teamAssignments: [],
-                };
-                setUserProfile(initialStudentProfile);
-            } else {
-                setUserProfile({
-                    uid: response.user.id,
-                    email: response.user.email,
-                    displayName: response.user.displayName,
-                    role: role as UserRole,
-                    institutionId: '',
-                    profileCompleted: false,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                } as any);
-            }
+            // Fetch latest profile from backend so assessment/team flags are accurate
+            await fetchAndSetProfile(response.accessToken);
         } catch (err: any) {
             const errorMessage = err.message || 'Sign up failed';
             setError(errorMessage);
@@ -293,6 +256,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Clear user state
             setCurrentUser(null);
             setUserProfile(null);
+            setToken(null);
             setError(null);
         } catch (err: any) {
             console.error('Logout error:', err);
@@ -310,25 +274,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (!accessToken) {
                 throw new Error('No access token found');
             }
-
-            const response = await authApi.getProfile(accessToken);
-            if (response.success && response.user) {
-                // Map based on role (Following UserPlan.md)
-                if (response.user.role === 'student') {
-                    setUserProfile(mapToStudentProfile(response.user));
-                } else {
-                    setUserProfile({
-                        ...response.user,
-                        uid: response.user.id,
-                        email: response.user.email,
-                        displayName: response.user.displayName,
-                        role: response.user.role as UserRole,
-                        profileCompleted: response.user.profileCompleted || false,
-                        createdAt: new Date(response.user.createdAt),
-                        updatedAt: new Date(response.user.updatedAt)
-                    } as any);
-                }
-            }
+            await fetchAndSetProfile(accessToken, true);
         } catch (err: any) {
             console.error('Failed to refresh profile:', err);
             if (err.message === 'Unauthorized') {
@@ -337,9 +283,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }
 
+    function getToken(): string | null {
+        return token || localStorage.getItem('accessToken');
+    }
+
     const value: AuthContextType = {
         currentUser,
         userProfile,
+        token: token || localStorage.getItem('accessToken'),
         loading,
         error,
         signInWithGoogle,
@@ -349,6 +300,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         logout,
         resetPassword,
         refreshUserProfile,
+        getToken,
     };
 
     return (

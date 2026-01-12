@@ -21,3 +21,4 @@ export * from './userManagement';
 export * from './resumeService';
 export * from './assessmentApi';
 export * from './api';
+export { default as webSocketService } from './websocketService';

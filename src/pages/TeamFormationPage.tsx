@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Users, Sparkles, Target, TrendingUp, AlertCircle, CheckCircle, BarChart3,
     Brain, Shield, XCircle, RefreshCw, ArrowRightLeft, Lock, Eye, CheckCircle2
@@ -15,7 +15,7 @@ import {
     swapTeamMembers,
     AIFormationResult,
 } from '../services/aiTeamFormation';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useWebSocket } from '../contexts';
 import { DashboardLayout } from '../components/layout';
 import { Team, TeamMember } from '../types';
 
@@ -46,6 +46,8 @@ type FormationMode = 'algorithmic' | 'ai-powered';
 
 const TeamFormationPage: React.FC = () => {
     const { currentUser } = useAuth();
+    const { onTeamFormationUpdate, onStudentEligibilityChanged } = useWebSocket();
+
     const [teamSize, setTeamSize] = useState<number>(4);
     const [formationMode, setFormationMode] = useState<FormationMode>('algorithmic');
     const [selectedStrategy, setSelectedStrategy] = useState<TeamFormationStrategy | null>(null);
@@ -62,6 +64,28 @@ const TeamFormationPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+
+    // Real-time updates
+    const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
+
+    // Listen for real-time team formation updates
+    useEffect(() => {
+        onTeamFormationUpdate((data) => {
+            console.log('Team formation update received:', data);
+            setRealtimeMessage(`Team "${data.data?.teamName}" was formed with ${data.data?.members?.length || 0} members`);
+
+            // Clear the message after 5 seconds
+            setTimeout(() => setRealtimeMessage(null), 5000);
+        });
+
+        onStudentEligibilityChanged((data) => {
+            console.log('Student eligibility changed:', data);
+            if (data.data?.eligible === false && data.data?.teamId) {
+                setRealtimeMessage(`Student ${data.data.displayName} is no longer eligible (joined team)`);
+                setTimeout(() => setRealtimeMessage(null), 5000);
+            }
+        });
+    }, [onTeamFormationUpdate, onStudentEligibilityChanged]);
 
     const strategyInfo = {
         balanced: {
@@ -251,6 +275,20 @@ const TeamFormationPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Real-time Updates Banner */}
+                    {realtimeMessage && (
+                        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-2xl p-4 shadow-lg">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                    <span className="font-medium">Real-time Update:</span>
+                                    <span>{realtimeMessage}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Mode Selection Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

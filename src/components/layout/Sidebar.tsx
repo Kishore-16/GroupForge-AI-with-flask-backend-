@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth, useTheme } from '../../contexts';
+import { RealTimeStatus } from '../ui';
 import {
     Home,
     ClipboardCheck,
@@ -189,6 +190,14 @@ export function Sidebar() {
                         </div>
                     </div>
                 )}
+                {/* Real-time Status */}
+                <div className={cn(
+                    "flex items-center gap-2 px-2 py-2 bg-gray-50 dark:bg-gray-900/50 rounded-lg",
+                    isCollapsed ? "justify-center" : "justify-start"
+                )}>
+                    <RealTimeStatus showText={!isCollapsed} />
+                </div>
+
                 <button
                     onClick={logout}
                     className={cn(

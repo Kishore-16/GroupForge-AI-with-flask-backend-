@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts';
+import { useAuth, useWebSocket } from '../contexts';
 import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button, SkillBar } from '../components/ui';
 import { getStudentTeam } from '../services';
@@ -16,7 +16,8 @@ import {
     Sparkles,
     CheckCircle2,
     AlertCircle,
-    User
+    User,
+    Bell
 } from 'lucide-react';
 
 interface TeamWithDetails extends Team {
@@ -25,59 +26,95 @@ interface TeamWithDetails extends Team {
 
 export function MyTeamsPage() {
     const { userProfile } = useAuth();
+    const { onTeamFormed, onTeamUpdated } = useWebSocket();
+
     const [teams, setTeams] = useState<TeamWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const [realtimeUpdate, setRealtimeUpdate] = useState<string | null>(null);
+
+    // Listen for real-time team updates
+    useEffect(() => {
+        onTeamFormed((data) => {
+            console.log('New team formed:', data);
+            // Check if the current user is in the new team
+            const isUserInTeam = data.data?.members?.some((member: any) =>
+                member.userId === userProfile?.id || member.studentId === userProfile?.id
+            );
+
+            if (isUserInTeam) {
+                setRealtimeUpdate(`You've been added to team: ${data.data?.teamName}`);
+                // Refresh team data
+                loadTeamData();
+
+                setTimeout(() => setRealtimeUpdate(null), 5000);
+            }
+        });
+
+        onTeamUpdated((data) => {
+            console.log('Team updated:', data);
+            setRealtimeUpdate(`Team "${data.data?.teamName}" has been updated`);
+            // Refresh team data
+            loadTeamData();
+
+            setTimeout(() => setRealtimeUpdate(null), 5000);
+        });
+    }, [onTeamFormed, onTeamUpdated, userProfile?.id]);
 
     // Following UserPlan.md: Check if student is in a team using inTeam and teamId
     const studentProfile = userProfile as StudentProfile | null;
     const isInTeam = studentProfile?.inTeam || false;
     const teamId = studentProfile?.teamId;
 
-    useEffect(() => {
-        async function fetchTeams() {
-            if (!userProfile?.uid) {
+    const loadTeamData = async () => {
+        if (!userProfile?.uid) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // Following UserPlan.md: Check inTeam flag first
+            if (!isInTeam || !teamId) {
+                setTeams([]);
                 setLoading(false);
                 return;
             }
 
-            try {
-                // Following UserPlan.md: Check inTeam flag first
-                if (!isInTeam || !teamId) {
-                    setTeams([]);
-                    setLoading(false);
-                    return;
-                }
+            // Use the getStudentTeam function to fetch the student's team
+            const result = await getStudentTeam(userProfile.uid);
 
-                // Use the getStudentTeam function to fetch the student's team
-                const result = await getStudentTeam(userProfile.uid);
+            // Check if student is assigned to a team
+            if ('status' in result && result.status === 'not_assigned') {
+                setTeams([]);
+                setLoading(false);
+                return;
+            }
 
-                // Check if student is assigned to a team
-                if ('status' in result && result.status === 'not_assigned') {
-                    setTeams([]);
-                    setLoading(false);
-                    return;
-                }
+            // If we get a valid team, process it
+            if ('team' in result && result.team) {
+                const team = result.team;
 
-                // Student has a team - the API returns enriched member profiles
-                const teamData = result as Team;
-                console.log('Team data loaded:', teamData);
-
+                // For now, create a simple array with the single team
+                // In a real implementation, you might need to fetch member profiles
                 const teamWithDetails: TeamWithDetails = {
-                    ...teamData,
-                    memberProfiles: (teamData as any).memberProfiles || []
+                    ...team,
+                    memberProfiles: [] // You would populate this with actual member data
                 };
 
                 setTeams([teamWithDetails]);
-            } catch (error) {
-                console.error('Error fetching teams:', error);
+            } else {
                 setTeams([]);
-            } finally {
-                setLoading(false);
             }
+        } catch (error) {
+            console.error('Error fetching teams:', error);
+            setTeams([]);
+        } finally {
+            setLoading(false);
         }
+    };
 
-        fetchTeams();
-    }, [userProfile, isInTeam, teamId]);
+    useEffect(() => {
+        loadTeamData();
+    }, [userProfile?.uid, isInTeam, teamId]);
 
     if (loading) {
         return (
@@ -178,6 +215,19 @@ export function MyTeamsPage() {
     return (
         <DashboardLayout>
             <div className="max-w-6xl mx-auto space-y-6">
+                {/* Real-time Updates Banner */}
+                {realtimeUpdate && (
+                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 shadow-lg">
+                        <div className="flex items-center gap-3">
+                            <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-pulse" />
+                            <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                                <span className="font-medium">Team Update:</span>
+                                <span>{realtimeUpdate}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-600 via-indigo-600 to-accent-500 text-white p-6 shadow-lg">
                     <div className="relative z-10 flex flex-col gap-1">
                         <div className="inline-flex items-center gap-2 text-sm font-semibold bg-white/10 px-3 py-1 rounded-full w-fit">
