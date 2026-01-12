@@ -3,52 +3,36 @@ import { useAuth } from '../contexts';
 import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader } from '../components/ui';
 import { getMetaStats } from '../services/metaService';
+import { fetchAllTeams } from '../services/api';
 import {
     AlertCircle,
     BarChart3,
-    BookOpen,
     Users,
     Target,
-    TrendingUp,
     Activity,
     CheckCircle,
     Clock,
-    Award,
-    PieChart
+    Sparkles
 } from 'lucide-react';
 
 interface AnalyticsData {
-    totalCourses: number;
     totalStudents: number;
     totalTeams: number;
     assessmentRate: number;
     completedAssessments: number;
     pendingAssessments: number;
-    skillDistribution: { [key: string]: number };
-    teamPerformance: {
-        excellent: number;
-        good: number;
-        average: number;
-        needsImprovement: number;
-    };
+    eligibleForTeams: number;
 }
 
 export function AnalyticsPage() {
     const { userProfile } = useAuth();
     const [analytics, setAnalytics] = useState<AnalyticsData>({
-        totalCourses: 0,
         totalStudents: 0,
         totalTeams: 0,
         assessmentRate: 0,
         completedAssessments: 0,
         pendingAssessments: 0,
-        skillDistribution: {},
-        teamPerformance: {
-            excellent: 0,
-            good: 0,
-            average: 0,
-            needsImprovement: 0
-        }
+        eligibleForTeams: 0
     });
     const [loading, setLoading] = useState(true);
 
@@ -62,33 +46,27 @@ export function AnalyticsPage() {
         try {
             setLoading(true);
 
-            // Firebase database removed
-            console.warn('Firebase database removed - returning mock analytics data');
+            // Fetch real data from backend
+            const [metaStats, teamsData] = await Promise.all([
+                getMetaStats(),
+                fetchAllTeams()
+            ]);
 
-            const { usersCount, assessedUsersCount } = await getMetaStats();
-            const totalStudentsCount = usersCount;
-            const completedAssessmentsCount = assessedUsersCount;
-            const pendingAssessments = Math.max(totalStudentsCount - completedAssessmentsCount, 0);
-            const assessmentRate = totalStudentsCount > 0
-                ? Math.round((completedAssessmentsCount / totalStudentsCount) * 100)
+            const { usersCount, assessedUsersCount } = metaStats;
+            const pendingAssessments = Math.max(usersCount - assessedUsersCount, 0);
+            const assessmentRate = usersCount > 0
+                ? Math.round((assessedUsersCount / usersCount) * 100)
                 : 0;
 
-            const totalTeamsCount = 0; // Will be updated when team data is available
+            const activeTeams = teamsData.filter(t => t.status === 'active' || t.status === 'completed');
 
             setAnalytics({
-                totalCourses: 0,
-                totalStudents: totalStudentsCount,
-                totalTeams: totalTeamsCount,
+                totalStudents: usersCount,
+                totalTeams: activeTeams.length,
                 assessmentRate,
-                completedAssessments: completedAssessmentsCount,
+                completedAssessments: assessedUsersCount,
                 pendingAssessments,
-                skillDistribution: {},
-                teamPerformance: {
-                    excellent: 0,
-                    good: 0,
-                    average: 0,
-                    needsImprovement: Math.round(totalTeamsCount * 0.09)
-                }
+                eligibleForTeams: assessedUsersCount
             });
         } catch (err: any) {
             console.error('Error fetching analytics:', err);
@@ -123,228 +101,224 @@ export function AnalyticsPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <BarChart3 className="w-7 h-7 text-primary-600" />
-                        Analytics Dashboard
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Overview of your courses, students, and team performance</p>
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Analytics Header */}
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-600 via-teal-600 to-emerald-600 p-8 text-white shadow-2xl">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                <BarChart3 className="w-7 h-7" />
+                            </div>
+                            <span className="text-sm font-semibold uppercase tracking-wide">Detailed Analytics</span>
+                        </div>
+                        <h1 className="text-4xl font-bold mb-2">
+                            Data-Driven Insights 📈
+                        </h1>
+                        <p className="text-white/90 text-lg max-w-3xl">
+                            In-depth analysis of student assessments, team compositions, and formation trends. Use these insights to optimize team balance and student learning outcomes.
+                        </p>
+                    </div>
+                    <div className="absolute -right-20 -top-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+                    <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
                 </div>
 
-                {/* Key Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card>
-                        <CardBody className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Courses</p>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{analytics.totalCourses}</p>
-                                </div>
-                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center">
-                                    <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-300" />
-                                </div>
+                {/* Summary Cards - Compact */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card className="group hover:shadow-lg transition-all">
+                        <CardBody className="p-4">
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center mb-3">
+                                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Students</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics.totalStudents}</p>
                         </CardBody>
                     </Card>
 
-                    <Card>
-                        <CardBody className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Students</p>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{analytics.totalStudents}</p>
-                                </div>
-                                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
-                                    <Users className="w-6 h-6 text-green-600 dark:text-green-300" />
-                                </div>
+                    <Card className="group hover:shadow-lg transition-all">
+                        <CardBody className="p-4">
+                            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-xl flex items-center justify-center mb-3">
+                                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                             </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Assessed</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics.completedAssessments}</p>
                         </CardBody>
                     </Card>
 
-                    <Card>
-                        <CardBody className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Teams Formed</p>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{analytics.totalTeams}</p>
-                                </div>
-                                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/40 rounded-xl flex items-center justify-center">
-                                    <Target className="w-6 h-6 text-purple-600 dark:text-purple-300" />
-                                </div>
+                    <Card className="group hover:shadow-lg transition-all">
+                        <CardBody className="p-4">
+                            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-xl flex items-center justify-center mb-3">
+                                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                             </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pending</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics.pendingAssessments}</p>
                         </CardBody>
                     </Card>
 
-                    <Card>
-                        <CardBody className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Assessment Rate</p>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{analytics.assessmentRate}%</p>
-                                </div>
-                                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/40 rounded-xl flex items-center justify-center">
-                                    <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-300" />
-                                </div>
+                    <Card className="group hover:shadow-lg transition-all">
+                        <CardBody className="p-4">
+                            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center mb-3">
+                                <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                             </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Teams</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics.totalTeams}</p>
                         </CardBody>
                     </Card>
                 </div>
 
-                {/* Assessment Progress */}
+                {/* Assessment Funnel Analysis */}
+                <Card className="hover:shadow-lg transition-all">
+                    <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                            Student Assessment Funnel
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">See how many students are progressing through each stage</p>
+                    </CardHeader>
+                    <CardBody className="p-6">
+                        <div className="space-y-4">
+                            {/* Total Students */}
+                            <div className="flex items-end gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">All Registered Students</span>
+                                        <span className="text-lg font-bold text-gray-900 dark:text-white">{analytics.totalStudents}</span>
+                                    </div>
+                                    <div className="w-full h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-md"></div>
+                                </div>
+                            </div>
+
+                            {/* Arrow */}
+                            <div className="flex justify-center py-2">
+                                <div className="text-2xl text-gray-400">↓</div>
+                            </div>
+
+                            {/* Completed Assessment */}
+                            <div className="flex items-end gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Completed Assessment</span>
+                                        <span className="text-lg font-bold text-gray-900 dark:text-white">{analytics.completedAssessments} ({analytics.assessmentRate}%)</span>
+                                    </div>
+                                    <div 
+                                        className="h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-md transition-all" 
+                                        style={{ width: `${(analytics.completedAssessments / analytics.totalStudents) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+
+                            {/* Arrow */}
+                            <div className="flex justify-center py-2">
+                                <div className="text-2xl text-gray-400">↓</div>
+                            </div>
+
+                            {/* Eligible for Teams */}
+                            <div className="flex items-end gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Eligible for Team Formation</span>
+                                        <span className="text-lg font-bold text-gray-900 dark:text-white">{analytics.eligibleForTeams}</span>
+                                    </div>
+                                    <div 
+                                        className="h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg shadow-md transition-all" 
+                                        style={{ width: `${(analytics.eligibleForTeams / analytics.totalStudents) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+
+                            {/* Insight */}
+                            <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-l-4 border-teal-500">
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>Conversion Rate:</strong> {analytics.totalStudents > 0 ? Math.round((analytics.eligibleForTeams / analytics.totalStudents) * 100) : 0}% of registered students have completed assessments and are ready for team formation.
+                                </p>
+                            </div>
+                        </div>
+                    </CardBody>
+                </Card>
+
+                {/* Team Distribution Analysis */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
+                    {/* Team Stats */}
+                    <Card className="hover:shadow-lg transition-all">
+                        <CardHeader className="border-b bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-primary-600" />
-                                Assessment Progress
+                                <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                Team Distribution
                             </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Overview of team formation status</p>
                         </CardHeader>
                         <CardBody className="p-6">
                             <div className="space-y-4">
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-300" />
-                                            Completed
-                                        </span>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                            {analytics.completedAssessments} students
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
-                                        <div
-                                            className="bg-green-600 dark:bg-green-400 h-2 rounded-full"
-                                            style={{
-                                                width: `${(analytics.completedAssessments + analytics.pendingAssessments) > 0 ? (analytics.completedAssessments / (analytics.completedAssessments + analytics.pendingAssessments)) * 100 : 0}%`
-                                            }}
-                                        />
-                                    </div>
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Teams</span>
+                                    <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{analytics.totalTeams}</span>
                                 </div>
 
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                                            <Clock className="w-4 h-4 text-orange-600 dark:text-orange-300" />
-                                            Pending
-                                        </span>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                            {analytics.pendingAssessments} students
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
-                                        <div
-                                            className="bg-orange-600 dark:bg-orange-400 h-2 rounded-full"
-                                            style={{
-                                                width: `${(analytics.completedAssessments + analytics.pendingAssessments) > 0 ? (analytics.pendingAssessments / (analytics.completedAssessments + analytics.pendingAssessments)) * 100 : 0}%`
-                                            }}
-                                        />
-                                    </div>
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Avg Team Size</span>
+                                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                        {analytics.completedAssessments > 0 && analytics.totalTeams > 0 
+                                            ? Math.round(analytics.completedAssessments / analytics.totalTeams) 
+                                            : 0}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-800">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Coverage</span>
+                                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                        {analytics.totalStudents > 0 && analytics.totalTeams > 0
+                                            ? Math.round((analytics.completedAssessments / analytics.totalStudents) * 100)
+                                            : 0}%
+                                    </span>
                                 </div>
                             </div>
                         </CardBody>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
+                    {/* Recommendations */}
+                    <Card className="hover:shadow-lg transition-all">
+                        <CardHeader className="border-b bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Award className="w-5 h-5 text-primary-600" />
-                                Team Performance
+                                <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                Next Actions
                             </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Recommended steps to optimize your workflow</p>
                         </CardHeader>
                         <CardBody className="p-6">
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">Excellent</span>
-                                    <span className="text-sm font-medium text-green-600 dark:text-green-300">
-                                        {analytics.teamPerformance.excellent} teams
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">Good</span>
-                                    <span className="text-sm font-medium text-blue-600 dark:text-blue-300">
-                                        {analytics.teamPerformance.good} teams
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">Average</span>
-                                    <span className="text-sm font-medium text-yellow-600 dark:text-yellow-300">
-                                        {analytics.teamPerformance.average} teams
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">Needs Improvement</span>
-                                    <span className="text-sm font-medium text-red-600 dark:text-red-300">
-                                        {analytics.teamPerformance.needsImprovement} teams
-                                    </span>
+                                {analytics.pendingAssessments > 0 && (
+                                    <div className="flex gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">1</div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">Send Assessment Reminders</p>
+                                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{analytics.pendingAssessments} students still need to complete their assessment</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {analytics.eligibleForTeams >= 10 && analytics.totalTeams === 0 && (
+                                    <div className="flex gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">2</div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">Form First Teams</p>
+                                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">You have {analytics.eligibleForTeams} eligible students. Start team formation now!</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                                        {analytics.pendingAssessments > 0 || (analytics.eligibleForTeams >= 10 && analytics.totalTeams === 0) ? 3 : 2}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">Monitor Team Performance</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Track team progress and provide feedback regularly</p>
+                                    </div>
                                 </div>
                             </div>
                         </CardBody>
                     </Card>
                 </div>
-
-                {/* Skill Distribution */}
-                <Card>
-                    <CardHeader>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                            <PieChart className="w-5 h-5 text-primary-600" />
-                            Skill Distribution Across Students
-                        </h3>
-                    </CardHeader>
-                    <CardBody className="p-6">
-                        <div className="space-y-4">
-                            {Object.entries(analytics.skillDistribution).map(([skill, count]) => (
-                                <div key={skill}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-gray-700 dark:text-gray-300">{skill}</span>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{count} students</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
-                                        <div
-                                            className="bg-primary-600 dark:bg-primary-400 h-2 rounded-full"
-                                            style={{
-                                                width: `${(count / analytics.totalStudents) * 100}%`
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardBody>
-                </Card>
-
-                {/* Insights */}
-                <Card>
-                    <CardHeader>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-primary-600" />
-                            Key Insights
-                        </h3>
-                    </CardHeader>
-                    <CardBody className="p-6">
-                        <div className="space-y-4">
-                            <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
-                                <p className="text-sm text-blue-900 dark:text-blue-100">
-                                    <strong>Communication Skills:</strong> Most prevalent skill among students ({analytics.skillDistribution['Communication'] || 0}%).
-                                    Consider forming teams with diverse communication styles.
-                                </p>
-                            </div>
-                            <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
-                                <p className="text-sm text-green-900 dark:text-green-100">
-                                    <strong>Assessment Completion:</strong> {analytics.assessmentRate}% of students have completed assessments.
-                                    {analytics.pendingAssessments > 0 && ' Send reminders to pending students.'}
-                                </p>
-                            </div>
-                            <div className="p-4 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 rounded-lg">
-                                <p className="text-sm text-purple-900 dark:text-purple-100">
-                                    <strong>Team Performance:</strong> {analytics.teamPerformance.excellent + analytics.teamPerformance.good} teams performing above average.
-                                    Consider sharing best practices from high-performing teams.
-                                </p>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
             </div>
         </DashboardLayout>
     );
