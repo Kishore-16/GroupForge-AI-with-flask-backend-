@@ -58,13 +58,13 @@ export function MyTeamsPage() {
                     return;
                 }
 
-                // Student has a team - fetch member profiles
+                // Student has a team - the API returns enriched member profiles
                 const teamData = result as Team;
                 console.log('Team data loaded:', teamData);
 
                 const teamWithDetails: TeamWithDetails = {
                     ...teamData,
-                    memberProfiles: []
+                    memberProfiles: (teamData as any).memberProfiles || []
                 };
 
                 setTeams([teamWithDetails]);
@@ -135,15 +135,15 @@ export function MyTeamsPage() {
                             {/* Eligibility Status */}
                             <div className="flex justify-center gap-4 mt-6">
                                 <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${profileCompleted
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-                                        : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                                     }`}>
                                     {profileCompleted ? <CheckCircle2 className="w-4 h-4" /> : <User className="w-4 h-4" />}
                                     Profile {profileCompleted ? 'Complete' : 'Incomplete'}
                                 </div>
                                 <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${attendedTest
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-                                        : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                                     }`}>
                                     {attendedTest ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                                     Assessment {attendedTest ? 'Done' : 'Pending'}

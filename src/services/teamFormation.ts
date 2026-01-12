@@ -591,10 +591,73 @@ export async function getAllStrategiesComparison(
 
 /**
  * Get the team assigned to a specific student
- * @param studentId - The UID of the student
+ * @param _studentId - The UID of the student (not used, backend uses JWT)
  * @returns The team data if found, or {status: "not_assigned"} if not found
  */
 export async function getStudentTeam(_studentId: string): Promise<Team | { status: 'not_assigned' }> {
-    console.warn('Firebase database removed - returning not assigned');
-    return { status: 'not_assigned' };
+    try {
+        const { apiFetch } = await import('./api');
+        
+        const response = await apiFetch<{
+            success: boolean;
+            data: {
+                teamId: string;
+                teamName: string;
+                members: Array<{
+                    studentId: string;
+                    role: string;
+                    joinedAt: string;
+                    displayName?: string;
+                    email?: string;
+                    major?: string;
+                    department?: string;
+                    skills?: Record<string, number>;
+                    githubUsername?: string;
+                }>;
+                teamSkillVector: Record<string, number>;
+                status: string;
+                createdBy: string;
+                createdAt: string;
+            } | null;
+            message?: string;
+        }>('/teams/my-team');
+        
+        if (!response.success || !response.data) {
+            return { status: 'not_assigned' };
+        }
+        
+        const teamData = response.data;
+        
+        // Convert backend response to Team type
+        const team: Team = {
+            id: teamData.teamId,
+            name: teamData.teamName,
+            members: teamData.members.map(m => ({
+                studentId: m.studentId,
+                role: (m.role || 'contributor') as any,
+                joinedAt: m.joinedAt
+            })),
+            teamSkillVector: teamData.teamSkillVector,
+            status: (teamData.status || 'active') as any,
+            createdBy: teamData.createdBy,
+            createdAt: teamData.createdAt
+        };
+        
+        // Attach enriched member data for UI display
+        (team as any).memberProfiles = teamData.members.map(m => ({
+            uid: m.studentId,
+            displayName: m.displayName || '',
+            email: m.email || '',
+            major: m.major || '',
+            department: m.department || '',
+            skills: m.skills || {},
+            githubUsername: m.githubUsername || '',
+            role: 'student'
+        }));
+        
+        return team;
+    } catch (error) {
+        console.error('Error fetching student team:', error);
+        return { status: 'not_assigned' };
+    }
 }

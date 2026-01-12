@@ -77,3 +77,60 @@ def list_teams():
             "error": str(e)
         }), 500
 
+
+@bp.route("/my-team", methods=["GET"])
+@jwt_required()
+def get_my_team():
+    """
+    Get the team for the currently authenticated student.
+    Returns team details with member information.
+    """
+    try:
+        student_id = get_jwt_identity()
+        team = team_service.get_student_team(student_id)
+
+        if team is None:
+            return jsonify({
+                "success": True,
+                "data": None,
+                "message": "Not assigned to any team"
+            }), 200
+
+        return jsonify({
+            "success": True,
+            "data": team
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@bp.route("/<team_id>", methods=["GET"])
+@jwt_required()
+def get_team_by_id(team_id):
+    """
+    Get a specific team by its ID.
+    """
+    try:
+        team = team_service.get_team_by_id(team_id)
+
+        if team is None:
+            return jsonify({
+                "success": False,
+                "error": "Team not found"
+            }), 404
+
+        return jsonify({
+            "success": True,
+            "data": team
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+

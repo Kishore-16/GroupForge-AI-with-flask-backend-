@@ -203,3 +203,72 @@ class TeamService:
             })
 
         return teams
+
+    def get_team_by_id(self, team_id: str) -> Dict | None:
+        """
+        Get a specific team by its ID with enriched member details.
+        """
+        try:
+            teams_collection = self._get_teams_collection()
+            users_collection = self._get_users_collection()
+            
+            team = teams_collection.find_one({'_id': ObjectId(team_id)})
+            if not team:
+                return None
+            
+            # Enrich member data with user profiles
+            enriched_members = []
+            for member in team.get('members', []):
+                student_id = member.get('studentId')
+                if student_id:
+                    try:
+                        user = users_collection.find_one({'_id': ObjectId(student_id)})
+                        if user:
+                            enriched_members.append({
+                                'studentId': student_id,
+                                'role': member.get('role', 'member'),
+                                'joinedAt': member.get('joinedAt').isoformat() if member.get('joinedAt') else None,
+                                'displayName': user.get('displayName', ''),
+                                'email': user.get('email', ''),
+                                'major': user.get('major', ''),
+                                'department': user.get('department', ''),
+                                'skills': user.get('skills', {}),
+                                'githubUsername': user.get('githubUsername', '')
+                            })
+                    except Exception:
+                        enriched_members.append(member)
+            
+            return {
+                "teamId": str(team["_id"]),
+                "teamName": team.get("teamName"),
+                "members": enriched_members,
+                "teamSkillVector": team.get("teamSkillVector", {}),
+                "status": team.get("status", "active"),
+                "createdBy": team.get("createdBy"),
+                "createdAt": team.get("createdAt").isoformat() if team.get("createdAt") else None
+            }
+        except Exception as e:
+            print(f"Error in get_team_by_id: {str(e)}")
+            raise
+
+    def get_student_team(self, student_id: str) -> Dict | None:
+        """
+        Get the team that a student belongs to.
+        """
+        try:
+            users_collection = self._get_users_collection()
+            
+            # First get the user to find their teamId
+            user = users_collection.find_one({'_id': ObjectId(student_id)})
+            if not user:
+                return None
+            
+            team_id = user.get('teamId')
+            if not team_id:
+                return None
+            
+            # Fetch full team details
+            return self.get_team_by_id(team_id)
+        except Exception as e:
+            print(f"Error in get_student_team: {str(e)}")
+            raise

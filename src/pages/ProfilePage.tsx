@@ -16,7 +16,6 @@ import {
     ArrowRight,
     ArrowLeft,
     Briefcase,
-    MessageSquare,
     Target,
     Globe,
     Clock,
@@ -271,22 +270,22 @@ export function ProfilePage() {
             if (userProfile.role === 'student') {
                 profileData.major = formData.major;
                 profileData.enrollmentNumber = formData.enrollmentNumber;
-                
+
                 // Following UserPlan.md: selectedSkills stores skill names
                 // skills stores skill scores (initialized to 0 before assessment)
                 const selectedSkillNames = formData.selectedSkills.map(s => s.name.toLowerCase().replace(/\s+/g, '_'));
                 profileData.selectedSkills = selectedSkillNames;
-                
+
                 // Initialize skills object with scores of 0 (will be updated after assessment)
                 const skillsObject: Record<string, number> = {};
                 selectedSkillNames.forEach(skillName => {
                     skillsObject[skillName] = 0;
                 });
                 profileData.skills = skillsObject;
-                
+
                 // Set GitHub connection status based on username
                 profileData.githubConnected = !!formData.githubUsername.trim();
-                
+
                 // Self-reported skill levels (optional, for additional context)
                 profileData.userSkills = formData.selectedSkills;
             } else if (userProfile.role === 'faculty') {
@@ -605,11 +604,10 @@ function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLev
                             <button
                                 key={skill}
                                 onClick={() => toggleSkill(skill)}
-                                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                                    isSelected
+                                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${isSelected
                                         ? 'bg-primary-500 text-white'
                                         : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                }`}
+                                    }`}
                             >
                                 {skill}
                             </button>
@@ -644,7 +642,7 @@ function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLev
             {/* Tools & Links */}
             <div className="border-t dark:border-gray-700 pt-4 mt-6">
                 <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">Tools & Links</h3>
-                
+
                 <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                         Tools
@@ -663,11 +661,10 @@ function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLev
                                                 : [...prev.tools, tool]
                                         }));
                                     }}
-                                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                                        isSelected
+                                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${isSelected
                                             ? 'bg-primary-500 text-white'
                                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                    }`}
+                                        }`}
                                 >
                                     {tool}
                                 </button>
@@ -896,7 +893,7 @@ function ProfileViewMode({ userProfile, onEdit }: {
                                         {studentProfile?.profileCompleted ? 'Completed' : 'Incomplete'}
                                     </p>
                                 </div>
-                                
+
                                 {/* Assessment Status */}
                                 <div className={`p-4 rounded-lg ${studentProfile?.attendedTest ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
                                     <div className="flex items-center gap-2 mb-2">
@@ -911,7 +908,7 @@ function ProfileViewMode({ userProfile, onEdit }: {
                                         {studentProfile?.attendedTest ? 'Completed' : 'Not Taken'}
                                     </p>
                                 </div>
-                                
+
                                 {/* Team Status */}
                                 <div className={`p-4 rounded-lg ${studentProfile?.inTeam ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
                                     <div className="flex items-center gap-2 mb-2">
@@ -957,15 +954,14 @@ function ProfileViewMode({ userProfile, onEdit }: {
                                             return (
                                                 <span
                                                     key={skill}
-                                                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                                        hasScore 
-                                                            ? score >= 70 
-                                                                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' 
-                                                                : score >= 50 
-                                                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-                                                                : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
+                                                    className={`px-3 py-1 rounded-full text-sm font-medium ${hasScore
+                                                            ? score >= 70
+                                                                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                                                                : score >= 50
+                                                                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                                                                    : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
                                                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                                     {hasScore && <span className="ml-1">({score}%)</span>}
@@ -975,7 +971,7 @@ function ProfileViewMode({ userProfile, onEdit }: {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* Self-reported skill levels */}
                             {studentProfile?.userSkills && studentProfile.userSkills.length > 0 && (
                                 <div>
@@ -995,7 +991,7 @@ function ProfileViewMode({ userProfile, onEdit }: {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* Latest Assessment Info */}
                             {studentProfile?.latestAssessment && (
                                 <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -1017,65 +1013,7 @@ function ProfileViewMode({ userProfile, onEdit }: {
                     </Card>
                 )}
 
-                {/* Work Style - only for students */}
-                {!isFaculty && (
-                    <Card>
-                        <CardHeader>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <MessageSquare className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                                Work & Communication Style
-                            </h3>
-                        </CardHeader>
-                        <CardBody className="p-6">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Learning Style</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.learningStyle || 'Not set'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Work Style</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.workStyle || 'Not set'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Communication</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.communicationPreference || 'Not set'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Meetings</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.meetingPreference || 'Not set'}</p>
-                                </div>
-                            </div>
-                        </CardBody>
-                    </Card>
-                )}
 
-                {/* Goals - only for students */}
-                {!isFaculty && (
-                    <Card>
-                        <CardHeader>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Target className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                                Goals & Preferences
-                            </h3>
-                        </CardHeader>
-                        <CardBody className="p-6">
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Primary Goal</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.goalPreference || 'Not set'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Commitment Level</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.commitmentLevel || 'Not set'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Team Preference</p>
-                                    <p className="font-medium text-gray-900 dark:text-white capitalize">{studentProfile?.teamPreference?.replace('-', ' ') || 'Not set'}</p>
-                                </div>
-                            </div>
-                        </CardBody>
-                    </Card>
-                )}
 
                 {/* Links */}
                 {!isFaculty && (studentProfile?.githubUsername || studentProfile?.portfolioUrl || studentProfile?.linkedinUrl) && (
