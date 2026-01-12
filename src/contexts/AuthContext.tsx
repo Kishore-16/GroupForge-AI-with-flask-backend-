@@ -37,7 +37,7 @@ function mapToStudentProfile(user: any): StudentProfile {
         displayName: user.displayName,
         role: 'student',
         institutionId: user.institutionId || '',
-        profileCompleted: user.profileCompleted || false,
+        profileCompleted: Boolean(user.profileCompleted),
         createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
         updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
 
@@ -53,14 +53,14 @@ function mapToStudentProfile(user: any): StudentProfile {
         latestAssessment: user.latestAssessment,
 
         // Profile Status Flags (Following UserPlan.md)
-        attendedTest: user.attendedTest || false,
-        inTeam: user.inTeam || false,
+        attendedTest: Boolean(user.attendedTest),
+        inTeam: Boolean(user.inTeam),
         teamId: user.teamId || null,
 
         // GitHub & Resume
-        githubConnected: user.githubConnected || false,
+        githubConnected: Boolean(user.githubConnected),
         githubUsername: user.githubUsername || '',
-        resumeUploaded: user.resumeUploaded || false,
+        resumeUploaded: Boolean(user.resumeUploaded),
 
         // Additional Info
         bio: user.bio || '',
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         email: response.user.email,
                         displayName: response.user.displayName,
                         role: response.user.role as UserRole,
-                        profileCompleted: response.user.profileCompleted || false,
+                        profileCompleted: Boolean(response.user.profileCompleted),
                         createdAt: new Date(response.user.createdAt),
                         updatedAt: new Date(response.user.updatedAt)
                     } as any);

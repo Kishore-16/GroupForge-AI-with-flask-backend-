@@ -30,7 +30,7 @@ export function ProtectedRoute({ children, requireProfileComplete = true }: Prot
 
     // Check if profile is complete (skip for /profile route)
     if (requireProfileComplete && location.pathname !== '/profile') {
-        const isProfileComplete = userProfile?.profileCompleted === true;
+        const isProfileComplete = !!userProfile?.profileCompleted;
 
         if (!isProfileComplete) {
             return <Navigate to="/profile" state={{ from: location }} replace />;

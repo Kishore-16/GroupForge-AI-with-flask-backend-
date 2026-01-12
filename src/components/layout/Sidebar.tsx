@@ -23,7 +23,7 @@ export function Sidebar() {
     const { userProfile, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const location = useLocation();
-    const isProfileComplete = userProfile?.profileCompleted === true;
+    const isProfileComplete = !!userProfile?.profileCompleted;
 
     // Persist collapsed state in localStorage
     const [isCollapsed, setIsCollapsed] = useState(() => {
