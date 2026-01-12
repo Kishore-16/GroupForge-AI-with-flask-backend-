@@ -38,33 +38,33 @@ function mapToStudentProfile(user: any): StudentProfile {
         profileCompleted: user.profileCompleted || false,
         createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
         updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
-        
+
         // Basic Profile Info
         enrollmentNumber: user.enrollmentNumber || '',
         department: user.department || '',
         major: user.major || '',
         year: user.year,
-        
+
         // Skills & Assessment (Following UserPlan.md)
         selectedSkills: user.selectedSkills || [],
         skills: user.skills || {},
         latestAssessment: user.latestAssessment,
-        
+
         // Profile Status Flags (Following UserPlan.md)
         attendedTest: user.attendedTest || false,
         inTeam: user.inTeam || false,
         teamId: user.teamId || null,
-        
+
         // GitHub & Resume
         githubConnected: user.githubConnected || false,
         githubUsername: user.githubUsername || '',
         resumeUploaded: user.resumeUploaded || false,
-        
+
         // Additional Info
         bio: user.bio || '',
         timezone: user.timezone || 'Asia/Calcutta',
         tools: user.tools || [],
-        
+
         // Optional fields
         courses: user.courses,
         projectTopics: user.projectTopics,
@@ -81,7 +81,7 @@ function mapToStudentProfile(user: any): StudentProfile {
         commitmentLevel: user.commitmentLevel,
         teamPreference: user.teamPreference,
         icebreakerPrompt: user.icebreakerPrompt,
-        
+
         // Legacy compatibility
         assessmentHistory: user.assessmentHistory || [],
         teamAssignments: user.teamAssignments || [],

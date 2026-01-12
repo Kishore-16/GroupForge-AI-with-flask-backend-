@@ -61,7 +61,7 @@ export function MyTeamsPage() {
                 // Student has a team - fetch member profiles
                 const teamData = result as Team;
                 console.log('Team data loaded:', teamData);
-                
+
                 const teamWithDetails: TeamWithDetails = {
                     ...teamData,
                     memberProfiles: []
@@ -93,7 +93,7 @@ export function MyTeamsPage() {
     if (teams.length === 0) {
         const profileCompleted = studentProfile?.profileCompleted || false;
         const attendedTest = studentProfile?.attendedTest || false;
-        
+
         return (
             <DashboardLayout>
                 <div className="max-w-4xl mx-auto space-y-6">
@@ -105,7 +105,7 @@ export function MyTeamsPage() {
                             </div>
                             <h1 className="text-3xl font-bold leading-tight">No Team Yet</h1>
                             <p className="text-white/85 text-sm max-w-2xl">
-                                {profileCompleted 
+                                {profileCompleted
                                     ? attendedTest
                                         ? 'Your profile is ready! Wait for faculty to form teams.'
                                         : 'Take the skill assessment to become eligible for team formation.'
@@ -125,33 +125,31 @@ export function MyTeamsPage() {
                                 {profileCompleted && attendedTest ? 'Waiting for Team Assignment' : 'Not Eligible Yet'}
                             </h3>
                             <p className="text-gray-500 dark:text-gray-300 max-w-md mx-auto">
-                                {profileCompleted 
+                                {profileCompleted
                                     ? attendedTest
                                         ? 'You\'ve completed all requirements! Faculty will form teams based on skill matching.'
                                         : 'Take the skill assessment to complete your eligibility requirements.'
                                     : 'Complete your profile and select your skills to become eligible for team matching.'}
                             </p>
-                            
+
                             {/* Eligibility Status */}
                             <div className="flex justify-center gap-4 mt-6">
-                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
-                                    profileCompleted 
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${profileCompleted
                                         ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                                         : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-                                }`}>
+                                    }`}>
                                     {profileCompleted ? <CheckCircle2 className="w-4 h-4" /> : <User className="w-4 h-4" />}
                                     Profile {profileCompleted ? 'Complete' : 'Incomplete'}
                                 </div>
-                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
-                                    attendedTest 
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${attendedTest
                                         ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
                                         : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-                                }`}>
+                                    }`}>
                                     {attendedTest ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                                     Assessment {attendedTest ? 'Done' : 'Pending'}
                                 </div>
                             </div>
-                            
+
                             <div className="flex flex-wrap gap-3 justify-center mt-6">
                                 {!profileCompleted && (
                                     <Button variant="primary" onClick={() => window.location.href = '/profile'}>
@@ -371,12 +369,12 @@ function MemberCard({
     isCurrentUser: boolean;
 }) {
     // Get top 3 skills to display
-    const skillEntries = member.skills && typeof member.skills === 'object' 
+    const skillEntries = member.skills && typeof member.skills === 'object'
         ? Object.entries(member.skills).filter(([_, v]) => typeof v === 'number').slice(0, 3)
         : [];
-    
+
     const colors = ['bg-blue-500', 'bg-purple-500', 'bg-pink-500'];
-    
+
     return (
         <div className={`p-4 rounded-lg border-2 ${isCurrentUser
             ? 'border-primary-300 bg-primary-50 dark:bg-primary-500/10 dark:border-primary-500'

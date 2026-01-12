@@ -19,10 +19,10 @@ export function getAuthToken(): string | null {
 function buildHeaders(init?: RequestInit): HeadersInit {
     // Preserve caller-provided headers (e.g., for FormData) and add JSON defaults when appropriate.
     const hasContentType = init?.headers && 'Content-Type' in (init.headers as any);
-    const baseHeaders: HeadersInit = hasContentType ? (init!.headers as HeadersInit) : 
-        (init?.body && init.body instanceof FormData) ? (init.headers ?? {}) : 
-        { 'Content-Type': 'application/json', ...(init?.headers ?? {}) };
-    
+    const baseHeaders: HeadersInit = hasContentType ? (init!.headers as HeadersInit) :
+        (init?.body && init.body instanceof FormData) ? (init.headers ?? {}) :
+            { 'Content-Type': 'application/json', ...(init?.headers ?? {}) };
+
     // Add Authorization header if token exists
     const token = getAuthToken();
     if (token) {
@@ -31,7 +31,7 @@ function buildHeaders(init?: RequestInit): HeadersInit {
             'Authorization': `Bearer ${token}`
         };
     }
-    
+
     return baseHeaders;
 }
 
