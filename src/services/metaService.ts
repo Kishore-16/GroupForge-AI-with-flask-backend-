@@ -10,7 +10,7 @@ export async function getMetaStats(): Promise<MetaStats> {
     const response = await apiFetch<{ success: boolean; data: { totalStudents: number; assessedStudents: number } }>('/users/stats', {
       method: 'GET'
     });
-    
+
     return {
       usersCount: response.data.totalStudents,
       assessedUsersCount: response.data.assessedStudents
