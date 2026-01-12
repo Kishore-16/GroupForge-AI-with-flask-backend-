@@ -46,7 +46,7 @@ type FormationMode = 'algorithmic' | 'ai-powered';
 
 const TeamFormationPage: React.FC = () => {
     const { currentUser } = useAuth();
-    const { onTeamFormationUpdate, onStudentEligibilityChanged } = useWebSocket();
+    const { onTeamFormationUpdate, onStudentEligibilityChanged, offTeamFormationUpdate, offStudentEligibilityChanged } = useWebSocket();
 
     const [teamSize, setTeamSize] = useState<number>(4);
     const [formationMode, setFormationMode] = useState<FormationMode>('algorithmic');
@@ -85,7 +85,11 @@ const TeamFormationPage: React.FC = () => {
                 setTimeout(() => setRealtimeMessage(null), 5000);
             }
         });
-    }, [onTeamFormationUpdate, onStudentEligibilityChanged]);
+        return () => {
+            offTeamFormationUpdate();
+            offStudentEligibilityChanged();
+        };
+    }, [onTeamFormationUpdate, onStudentEligibilityChanged, offTeamFormationUpdate, offStudentEligibilityChanged]);
 
     const strategyInfo = {
         balanced: {

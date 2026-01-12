@@ -21,6 +21,7 @@ interface WebSocketContextType {
     onAssessmentCompleted: (callback: (data: any) => void) => void;
     onTeamFormed: (callback: (data: any) => void) => void;
     onTeamUpdated: (callback: (data: any) => void) => void;
+    onTeamFormationUpdate: (callback: (data: any) => void) => void;
     onEligibilityChanged: (callback: (data: any) => void) => void;
     onStudentEligibilityChanged: (callback: (data: any) => void) => void;
     onAnalyticsUpdate: (callback: (data: any) => void) => void;
@@ -31,6 +32,7 @@ interface WebSocketContextType {
     offAssessmentCompleted: () => void;
     offTeamFormed: () => void;
     offTeamUpdated: () => void;
+    offTeamFormationUpdate: () => void;
     offEligibilityChanged: () => void;
     offStudentEligibilityChanged: () => void;
     offAnalyticsUpdate: () => void;
@@ -169,6 +171,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         webSocketService.on('team_updated', callback);
     };
 
+    const onTeamFormationUpdate = (callback: (data: any) => void) => {
+        webSocketService.on('team_formation_update', callback);
+    };
+
     const onEligibilityChanged = (callback: (data: any) => void) => {
         webSocketService.on('eligibility_changed', callback);
     };
@@ -202,6 +208,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         webSocketService.off('team_updated');
     };
 
+    const offTeamFormationUpdate = () => {
+        webSocketService.off('team_formation_update');
+    };
+
     const offEligibilityChanged = () => {
         webSocketService.off('eligibility_changed');
     };
@@ -232,6 +242,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         onAssessmentCompleted,
         onTeamFormed,
         onTeamUpdated,
+        onTeamFormationUpdate,
         onEligibilityChanged,
         onStudentEligibilityChanged,
         onAnalyticsUpdate,
@@ -242,6 +253,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         offAssessmentCompleted,
         offTeamFormed,
         offTeamUpdated,
+        offTeamFormationUpdate,
         offEligibilityChanged,
         offStudentEligibilityChanged,
         offAnalyticsUpdate,
