@@ -553,7 +553,7 @@ function FacultyDashboard() {
 
                 setStats({
                     totalStudents: usersCount,
-                    eligibleStudents: eligibleStudentsData.length,
+                    eligibleStudents: assessedUsersCount, // Use assessedUsersCount instead of eligibleStudentsData.length
                     teamsFormed: activeTeams.length,
                     assessmentRate: usersCount > 0 ? Math.round((assessedUsersCount / usersCount) * 100) : 0
                 });
@@ -903,52 +903,6 @@ function FacultyDashboard() {
                             </CardBody>
                         </Card>
 
-                        {/* Activity Summary */}
-                        <Card className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/50 dark:to-slate-900/50 hover:shadow-lg transition-all">
-                            <CardHeader className="border-b border-gray-200 dark:border-gray-800">
-                                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <Activity className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                                    Quick Stats
-                                </h3>
-                            </CardHeader>
-                            <CardBody className="p-5 space-y-3">
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
-                                            <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">Active Students</p>
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.totalStudents}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
-                                            <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">Active Teams</p>
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.teamsFormed}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
-                                            <CheckCircle2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">Eligible</p>
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.eligibleStudents}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardBody>
-                        </Card>
                     </div>
                 </div>
             </div>

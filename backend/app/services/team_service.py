@@ -254,8 +254,8 @@ class TeamService:
         teams = []
         for team in teams_cursor:
             teams.append({
-                "teamId": str(team["_id"]),
-                "teamName": team.get("teamName"),
+                "id": str(team["_id"]),
+                "name": team.get("teamName", "Unnamed Team"),
                 "members": team.get("members", []),
                 "teamSkillVector": team.get("teamSkillVector", {}),
                 "status": team.get("status", "active"),

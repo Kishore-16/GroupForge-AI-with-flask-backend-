@@ -1,4 +1,4 @@
-// Firebase database removed - stub implementation
+import { apiFetch } from './api';
 
 type MetaStats = {
   usersCount: number;
@@ -6,8 +6,19 @@ type MetaStats = {
 };
 
 export async function getMetaStats(): Promise<MetaStats> {
-  console.warn('Firebase database removed - returning mock data');
-  return { usersCount: 0, assessedUsersCount: 0 };
+  try {
+    const response = await apiFetch<{ success: boolean; data: { totalStudents: number; assessedStudents: number } }>('/users/stats', {
+      method: 'GET'
+    });
+    
+    return {
+      usersCount: response.data.totalStudents,
+      assessedUsersCount: response.data.assessedStudents
+    };
+  } catch (error) {
+    console.error('Error fetching meta stats:', error);
+    return { usersCount: 0, assessedUsersCount: 0 };
+  }
 }
 
 export async function getUserCount(): Promise<number> {

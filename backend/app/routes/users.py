@@ -135,3 +135,35 @@ def skill_status(user_id: str):
             "message": f"Error fetching skill status: {str(e)}"
         }), 500
 
+
+@bp.route("/stats", methods=["GET"])
+@jwt_required()
+def get_user_stats():
+    """
+    Get user statistics for dashboard
+    Returns count of total students and assessed students
+    """
+    try:
+        # Count students (users with role='student')
+        total_students = users_collection.count_documents({'role': 'student'})
+        
+        # Count assessed students (students who have completed the test)
+        assessed_students = users_collection.count_documents({
+            'role': 'student',
+            'attendedTest': True
+        })
+        
+        return jsonify({
+            "success": True,
+            "data": {
+                "totalStudents": total_students,
+                "assessedStudents": assessed_students
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Error fetching user stats: {str(e)}"
+        }), 500
+
