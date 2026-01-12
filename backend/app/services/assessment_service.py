@@ -81,6 +81,46 @@ class AssessmentService:
                     'message': 'Failed to update assessment'
                 }, 500
             
+            # Emit real-time updates
+            assessment_data = {
+                'userId': user_id,
+                'displayName': user.get('displayName'),
+                'skills': skills,
+                'overallScore': overall_score,
+                'attendedTest': True,
+                'profileCompleted': user.get('profileCompleted', False)
+            }
+            
+            # Import websocket service here to avoid circular imports
+            try:
+                from app.services.websocket_service import websocket_service
+                
+                # Emit to the user who completed assessment
+                websocket_service.emit_assessment_completed(user_id, assessment_data)
+                
+                # Check if user becomes eligible for teams and emit status change
+                profile_completed = user.get('profileCompleted', False)
+                if profile_completed:  # Now both profile and assessment are complete
+                    # Get updated user data for eligibility broadcast
+                    updated_user = users_collection.find_one({'_id': ObjectId(user_id)})
+                    if updated_user:
+                        student_data = {
+                            '_id': str(updated_user['_id']),
+                            'displayName': updated_user.get('displayName'),
+                            'email': updated_user.get('email'),
+                            'profileCompleted': updated_user.get('profileCompleted', False),
+                            'attendedTest': updated_user.get('attendedTest', False),
+                            'inTeam': updated_user.get('inTeam', False),
+                            'skills': updated_user.get('skills', {}),
+                            'eligible': (updated_user.get('profileCompleted', False) and 
+                                       updated_user.get('attendedTest', False) and 
+                                       not updated_user.get('inTeam', False))
+                        }
+                        websocket_service.emit_student_eligible_status_changed(student_data)
+            except ImportError:
+                # WebSocket service not available, continue without real-time updates
+                pass
+            
             return {
                 'success': True,
                 'message': 'Assessment completed successfully',

@@ -1,8 +1,9 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../../contexts';
 import { AlertCircle } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -13,6 +14,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const location = useLocation();
     const isProfilePage = location.pathname === '/profile';
     const showProfileBanner = !userProfile?.profileCompleted && !isProfilePage;
+
+    // Track sidebar collapsed state
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        const saved = localStorage.getItem('sidebarCollapsed');
+        return saved === 'true';
+    });
+
+    // Listen for storage changes to sync sidebar state
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const saved = localStorage.getItem('sidebarCollapsed');
+            setIsSidebarCollapsed(saved === 'true');
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        // Also check periodically for same-tab changes
+        const interval = setInterval(handleStorageChange, 100);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, []);
 
     if (loading) {
         return (
@@ -29,7 +53,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#030712] text-gray-900 dark:text-gray-100">
             <Sidebar />
-            <main className="ml-64 dark:bg-gradient-to-br dark:from-gray-950 dark:via-[#030712] dark:to-gray-950">
+            <main className={cn(
+                "transition-all duration-300 dark:bg-gradient-to-br dark:from-gray-950 dark:via-[#030712] dark:to-gray-950",
+                isSidebarCollapsed ? "ml-20" : "ml-64"
+            )}>
                 {/* Profile Completion Banner */}
                 {showProfileBanner && (
                     <div className="bg-yellow-50 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-800 px-8 py-4">

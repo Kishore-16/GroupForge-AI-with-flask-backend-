@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.extensions import cors, jwt, mongo
+from app.extensions import cors, jwt, mongo, socketio
 from app.routes import auth, users, resumes, assessments, teams, analytics, health
 
 
@@ -28,6 +28,10 @@ def create_app():
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     jwt.init_app(app)
     mongo.init_app(app)
+    socketio.init_app(app)
+
+    # Import WebSocket handlers to register events
+    from app import websocket_handlers
 
     # ===============================
     # Register Blueprints (Routes)

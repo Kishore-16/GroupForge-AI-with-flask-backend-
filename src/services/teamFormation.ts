@@ -597,7 +597,7 @@ export async function getAllStrategiesComparison(
 export async function getStudentTeam(_studentId: string): Promise<Team | { status: 'not_assigned' }> {
     try {
         const { apiFetch } = await import('./api');
-        
+
         const response = await apiFetch<{
             success: boolean;
             data: {
@@ -621,13 +621,13 @@ export async function getStudentTeam(_studentId: string): Promise<Team | { statu
             } | null;
             message?: string;
         }>('/teams/my-team');
-        
+
         if (!response.success || !response.data) {
             return { status: 'not_assigned' };
         }
-        
+
         const teamData = response.data;
-        
+
         // Convert backend response to Team type
         const team: Team = {
             id: teamData.teamId,
@@ -642,7 +642,7 @@ export async function getStudentTeam(_studentId: string): Promise<Team | { statu
             createdBy: teamData.createdBy,
             createdAt: teamData.createdAt
         };
-        
+
         // Attach enriched member data for UI display
         (team as any).memberProfiles = teamData.members.map(m => ({
             uid: m.studentId,
@@ -654,7 +654,7 @@ export async function getStudentTeam(_studentId: string): Promise<Team | { statu
             githubUsername: m.githubUsername || '',
             role: 'student'
         }));
-        
+
         return team;
     } catch (error) {
         console.error('Error fetching student team:', error);

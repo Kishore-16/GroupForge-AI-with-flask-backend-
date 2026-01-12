@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth, useTheme } from '../../contexts';
 import {
@@ -11,7 +12,9 @@ import {
     User,
     Lock,
     Moon,
-    Sun
+    Sun,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -20,6 +23,20 @@ export function Sidebar() {
     const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const isProfileComplete = userProfile?.profileCompleted === true;
+
+    // Persist collapsed state in localStorage
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        const saved = localStorage.getItem('sidebarCollapsed');
+        return saved === 'true';
+    });
+
+    const toggleCollapse = () => {
+        setIsCollapsed(prev => {
+            const newValue = !prev;
+            localStorage.setItem('sidebarCollapsed', String(newValue));
+            return newValue;
+        });
+    };
 
     const studentLinks = [
         { to: '/dashboard', icon: Home, label: 'Dashboard', requiresProfile: true },
@@ -50,17 +67,22 @@ export function Sidebar() {
             : studentLinks;
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800/50 flex flex-col">
+        <aside className={cn(
+            "fixed left-0 top-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800/50 flex flex-col transition-all duration-300",
+            isCollapsed ? "w-20" : "w-64"
+        )}>
             {/* Logo */}
             <div className="p-6 border-b border-gray-100 dark:border-gray-800/50">
                 <Link to="/dashboard" className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
                         <Users className="w-6 h-6 text-white" />
                     </div>
-                    <div>
-                        <h1 className="font-bold text-gray-900 dark:text-white">GroupForge</h1>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">AI Team Formation</p>
-                    </div>
+                    {!isCollapsed && (
+                        <div>
+                            <h1 className="font-bold text-gray-900 dark:text-white">GroupForge</h1>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">AI Team Formation</p>
+                        </div>
+                    )}
                 </Link>
             </div>
 
@@ -75,11 +97,14 @@ export function Sidebar() {
                         return (
                             <div
                                 key={link.to}
-                                className="flex items-center gap-3 px-4 py-3 rounded-lg opacity-50 cursor-not-allowed"
+                                className={cn(
+                                    "flex items-center gap-3 rounded-lg opacity-50 cursor-not-allowed",
+                                    isCollapsed ? "px-3 py-3 justify-center" : "px-4 py-3"
+                                )}
                                 title="Complete your profile to access this section"
                             >
                                 <Lock className="w-5 h-5 text-gray-400 dark:text-gray-600" />
-                                <span className="font-medium text-gray-400 dark:text-gray-600">{link.label}</span>
+                                {!isCollapsed && <span className="font-medium text-gray-400 dark:text-gray-600">{link.label}</span>}
                             </div>
                         );
                     }
@@ -88,15 +113,17 @@ export function Sidebar() {
                         <Link
                             key={link.to}
                             to={link.to}
+                            title={isCollapsed ? link.label : undefined}
                             className={cn(
-                                'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                                'flex items-center gap-3 rounded-lg transition-all',
+                                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3',
                                 isActive
                                     ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 shadow-sm'
                                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/70'
                             )}
                         >
                             <Icon className="w-5 h-5" />
-                            <span className="font-medium">{link.label}</span>
+                            {!isCollapsed && <span className="font-medium">{link.label}</span>}
                         </Link>
                     );
                 })}
@@ -104,51 +131,74 @@ export function Sidebar() {
 
             {/* User section */}
             <div className="p-4 border-t border-gray-100 dark:border-gray-800/50 space-y-3">
-                {/* Theme Toggle */}
+                {/* Collapse Toggle */}
                 <button
-                    onClick={toggleTheme}
+                    onClick={toggleCollapse}
                     className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
-                    {theme === 'dark' ? (
-                        <>
-                            <Sun className="w-4 h-4" />
-                            <span className="text-sm font-medium">Light Mode</span>
-                        </>
+                    {isCollapsed ? (
+                        <ChevronRight className="w-4 h-4" />
                     ) : (
                         <>
-                            <Moon className="w-4 h-4" />
-                            <span className="text-sm font-medium">Dark Mode</span>
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="text-sm font-medium">Collapse</span>
                         </>
                     )}
                 </button>
 
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center ring-2 ring-gray-100 dark:ring-gray-700">
-                        {userProfile?.photoURL ? (
-                            <img
-                                src={userProfile.photoURL}
-                                alt={userProfile.displayName}
-                                className="w-10 h-10 rounded-full"
-                            />
-                        ) : (
-                            <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                        )}
+                {/* Theme Toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                >
+                    {theme === 'dark' ? (
+                        <>
+                            <Sun className="w-4 h-4" />
+                            {!isCollapsed && <span className="text-sm font-medium">Light Mode</span>}
+                        </>
+                    ) : (
+                        <>
+                            <Moon className="w-4 h-4" />
+                            {!isCollapsed && <span className="text-sm font-medium">Dark Mode</span>}
+                        </>
+                    )}
+                </button>
+
+                {!isCollapsed && (
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center ring-2 ring-gray-100 dark:ring-gray-700">
+                            {userProfile?.photoURL ? (
+                                <img
+                                    src={userProfile.photoURL}
+                                    alt={userProfile.displayName}
+                                    className="w-10 h-10 rounded-full"
+                                />
+                            ) : (
+                                <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {userProfile?.displayName || 'User'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                {userProfile?.role || 'student'}
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {userProfile?.displayName || 'User'}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                            {userProfile?.role || 'student'}
-                        </p>
-                    </div>
-                </div>
+                )}
                 <button
                     onClick={logout}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/70 rounded-lg transition-colors"
+                    className={cn(
+                        "flex items-center gap-2 w-full py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/70 rounded-lg transition-colors",
+                        isCollapsed ? "px-3 justify-center" : "px-4"
+                    )}
+                    title={isCollapsed ? "Sign out" : undefined}
                 >
                     <LogOut className="w-4 h-4" />
-                    <span className="text-sm">Sign out</span>
+                    {!isCollapsed && <span className="text-sm">Sign out</span>}
                 </button>
             </div>
         </aside>

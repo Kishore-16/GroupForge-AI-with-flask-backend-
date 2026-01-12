@@ -605,8 +605,8 @@ function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLev
                                 key={skill}
                                 onClick={() => toggleSkill(skill)}
                                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${isSelected
-                                        ? 'bg-primary-500 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                    ? 'bg-primary-500 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                                     }`}
                             >
                                 {skill}
@@ -662,8 +662,8 @@ function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLev
                                         }));
                                     }}
                                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${isSelected
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                                         }`}
                                 >
                                     {tool}
@@ -955,12 +955,12 @@ function ProfileViewMode({ userProfile, onEdit }: {
                                                 <span
                                                     key={skill}
                                                     className={`px-3 py-1 rounded-full text-sm font-medium ${hasScore
-                                                            ? score >= 70
-                                                                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
-                                                                : score >= 50
-                                                                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-                                                                    : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-                                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                                        ? score >= 70
+                                                            ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                                                            : score >= 50
+                                                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                                                                : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
+                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                                                         }`}
                                                 >
                                                     {skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}

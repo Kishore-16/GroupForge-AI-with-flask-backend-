@@ -173,6 +173,67 @@ class TeamService:
                 )
                 raise ValueError(f"Failed to update student records: {str(e)}")
 
+        # Prepare team data for WebSocket broadcast
+        team_data = {
+            "teamId": team_id,
+            "teamName": team_name,
+            "members": [],
+            "teamSkillVector": team_skill_vector,
+            "status": "active",
+            "createdAt": team_doc["createdAt"].isoformat(),
+            "createdBy": faculty_id
+        }
+        
+        # Enrich member data for WebSocket
+        for member_doc in member_docs:
+            try:
+                student = users_collection.find_one({'_id': ObjectId(member_doc['studentId'])})
+                if student:
+                    team_data["members"].append({
+                        'userId': member_doc['studentId'],
+                        'studentId': member_doc['studentId'],
+                        'role': member_doc.get('role', 'member'),
+                        'joinedAt': member_doc.get('joinedAt').isoformat() if member_doc.get('joinedAt') else None,
+                        'displayName': student.get('displayName', ''),
+                        'email': student.get('email', ''),
+                        'major': student.get('major', ''),
+                        'department': student.get('department', ''),
+                        'skills': student.get('skills', {}),
+                        'githubUsername': student.get('githubUsername', '')
+                    })
+            except Exception:
+                team_data["members"].append(member_doc)
+        
+        # Import websocket service here to avoid circular imports
+        try:
+            from app.services.websocket_service import websocket_service
+            
+            # Emit real-time team formation event
+            websocket_service.emit_team_formed(team_data)
+            
+            # Emit student eligibility status changes for each team member
+            for member_doc in member_docs:
+                try:
+                    student = users_collection.find_one({'_id': ObjectId(member_doc['studentId'])})
+                    if student:
+                        student_data = {
+                            '_id': str(student['_id']),
+                            'displayName': student.get('displayName'),
+                            'email': student.get('email'),
+                            'profileCompleted': student.get('profileCompleted', False),
+                            'attendedTest': student.get('attendedTest', False),
+                            'inTeam': student.get('inTeam', False),
+                            'teamId': team_id,
+                            'skills': student.get('skills', {}),
+                            'eligible': False  # No longer eligible since they're in a team
+                        }
+                        websocket_service.emit_student_eligible_status_changed(student_data)
+                except Exception:
+                    pass
+        except ImportError:
+            # WebSocket service not available, continue without real-time updates
+            pass
+
         return {
             "teamId": team_id,
             "teamName": team_name,
