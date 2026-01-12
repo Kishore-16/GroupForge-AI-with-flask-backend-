@@ -93,3 +93,37 @@ export async function fetchEligibleStudents(): Promise<any[]> {
         return [];
     }
 }
+
+export interface StudentTeamMember {
+    studentId: string;
+    displayName: string;
+    email: string;
+    role: string;
+    skills: Record<string, number>;
+    major?: string;
+    department?: string;
+    joinedAt?: string;
+    githubUsername?: string;
+}
+
+export interface StudentTeam {
+    teamId: string;
+    teamName: string;
+    members: StudentTeamMember[];
+    teamSkillVector: Record<string, number>;
+    status: 'active' | 'completed' | 'needs_rebalance';
+    createdAt: string;
+    createdBy: string;
+}
+
+export async function getStudentTeam(): Promise<StudentTeam | null> {
+    try {
+        const response = await apiFetch<{ success: boolean; data: StudentTeam | null }>('/teams/my-team', {
+            method: 'GET'
+        });
+        return response.data || null;
+    } catch (error) {
+        console.error('Error fetching student team:', error);
+        return null;
+    }
+}
