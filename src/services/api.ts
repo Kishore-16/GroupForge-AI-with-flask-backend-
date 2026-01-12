@@ -54,3 +54,42 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
     return data as T;
 }
+
+// Teams API
+export interface TeamResponse {
+    id: string;
+    name: string;
+    members: Array<{
+        userId: string;
+        displayName: string;
+        email?: string;
+        role: string;
+    }>;
+    status: 'active' | 'completed' | 'draft' | 'archived';
+    createdAt: string;
+    createdBy: string;
+}
+
+export async function fetchAllTeams(): Promise<TeamResponse[]> {
+    try {
+        const response = await apiFetch<{ success: boolean; data: TeamResponse[] }>('/teams', {
+            method: 'GET'
+        });
+        return response.data || [];
+    } catch (error) {
+        console.error('Error fetching teams:', error);
+        return [];
+    }
+}
+
+export async function fetchEligibleStudents(): Promise<any[]> {
+    try {
+        const response = await apiFetch<{ success: boolean; data: any[]; count: number }>('/teams/eligible-students', {
+            method: 'GET'
+        });
+        return response.data || [];
+    } catch (error) {
+        console.error('Error fetching eligible students:', error);
+        return [];
+    }
+}
