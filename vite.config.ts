@@ -6,6 +6,12 @@ export default defineConfig({
     server: {
         host: "::",
         port: 54571,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:5000',
+                changeOrigin: true,
+            }
+        }
     },
     plugins: [react()],
     resolve: {

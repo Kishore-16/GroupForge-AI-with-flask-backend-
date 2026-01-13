@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useWebSocket } from '../contexts';
 import { DashboardLayout } from '../components/layout';
-import { Card, CardBody, CardHeader, Button, Input } from '../components/ui';
+import { Card, CardBody, CardHeader, Button, Input, ResumeUpload } from '../components/ui';
 import { authApi } from '../services/authApi';
+import { cn } from '../lib/utils';
 import {
     User,
     Mail,
@@ -74,6 +75,7 @@ export function ProfilePage() {
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [resumeImport, setResumeImport] = useState<{ skills: string[]; tools: string[] }>({ skills: [], tools: [] });
 
     // Listen for real-time profile updates
     useEffect(() => {
@@ -193,6 +195,41 @@ export function ProfilePage() {
                 s.name === skillName ? { ...s, level } : s
             )
         }));
+    };
+
+    const removeTool = (toolName: string) => {
+        setFormData(prev => ({
+            ...prev,
+            tools: prev.tools.filter(t => t.toLowerCase() !== toolName.toLowerCase())
+        }));
+    };
+
+    const handleResumeSuccess = (resumeResult: { detectedSkills?: string[]; detectedTools?: string[] }) => {
+        const detectedSkills = resumeResult.detectedSkills || [];
+        const detectedTools = resumeResult.detectedTools || [];
+
+        setResumeImport({ skills: detectedSkills, tools: detectedTools });
+
+        setFormData((prev: ProfileFormData) => {
+            const existingSkills = new Set(prev.selectedSkills.map((s: UserSkill) => s.name.toLowerCase()));
+            const mergedSkills = [...prev.selectedSkills];
+
+            detectedSkills.forEach((skill: string) => {
+                if (skill && !existingSkills.has(skill.toLowerCase())) {
+                    mergedSkills.push({ name: skill, level: 'intermediate' as SkillLevel });
+                }
+            });
+
+            const existingTools = new Set(prev.tools.map((t: string) => t.toLowerCase()));
+            const mergedTools = [...prev.tools];
+            detectedTools.forEach((tool: string) => {
+                if (tool && !existingTools.has(tool.toLowerCase())) {
+                    mergedTools.push(tool);
+                }
+            });
+
+            return { ...prev, selectedSkills: mergedSkills, tools: mergedTools };
+        });
     };
 
 
@@ -449,6 +486,125 @@ export function ProfilePage() {
                     </CardBody>
                 </Card>
 
+                {/* Resume Upload & Skill Extraction (students) */}
+                {!isFaculty && (
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Briefcase className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                                Resume Upload & AI Skill Extraction
+                            </h3>
+                        </CardHeader>
+                        <CardBody className="p-6">
+                            <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                Upload your resume to quickly pull in skills and tools; you can toggle which ones to keep.
+                            </p>
+                            <ResumeUpload
+                                onSuccess={handleResumeSuccess}
+                                onError={(uploadError) => console.error('Resume upload error:', uploadError)}
+                                hideResultDisplay={true}
+                            />
+
+                            {(resumeImport.skills.length > 0 || resumeImport.tools.length > 0) && (
+                                <div className="mt-6 space-y-6 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+                                    {resumeImport.skills.length > 0 && (
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                                <Target className="w-4 h-4 text-primary-500" />
+                                                Skills detected from resume
+                                            </p>
+                                            <div className="space-y-2">
+                                                {resumeImport.skills.map((skill: string) => {
+                                                    const selectedSkill = formData.selectedSkills.find((s: UserSkill) => s.name.toLowerCase() === skill.toLowerCase());
+                                                    const isSelected = !!selectedSkill;
+                                                    return (
+                                                        <div key={skill} className={cn(
+                                                            'flex items-center justify-between p-3 rounded-lg border transition-all',
+                                                            isSelected
+                                                                ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700'
+                                                                : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 opacity-60'
+                                                        )}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toggleSkill(skill)}
+                                                                className="flex items-center gap-2 flex-1 text-left"
+                                                            >
+                                                                <span className={cn(
+                                                                    'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
+                                                                    isSelected
+                                                                        ? 'bg-primary-500 border-primary-500 text-white'
+                                                                        : 'border-gray-400 dark:border-gray-500'
+                                                                )}>
+                                                                    {isSelected && <CheckCircle2 className="w-3 h-3" />}
+                                                                </span>
+                                                                <span className={cn(
+                                                                    'font-medium text-sm',
+                                                                    isSelected ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
+                                                                )}>{skill}</span>
+                                                            </button>
+                                                            {isSelected && (
+                                                                <div className="flex items-center gap-1">
+                                                                    {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map((level) => (
+                                                                        <button
+                                                                            key={level}
+                                                                            type="button"
+                                                                            onClick={() => updateSkillLevel(skill, level)}
+                                                                            className={cn(
+                                                                                'px-2 py-1 text-xs font-medium rounded-md transition-all capitalize',
+                                                                                selectedSkill?.level === level
+                                                                                    ? level === 'beginner' ? 'bg-yellow-500 text-white'
+                                                                                        : level === 'intermediate' ? 'bg-blue-500 text-white'
+                                                                                            : 'bg-green-500 text-white'
+                                                                                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                                                            )}
+                                                                        >
+                                                                            {level.slice(0, 3)}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {resumeImport.tools.length > 0 && (
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                                <Briefcase className="w-4 h-4 text-purple-500" />
+                                                Tools & Technologies detected
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {resumeImport.tools.map((tool: string) => {
+                                                    const isSelected = formData.tools.some((t: string) => t.toLowerCase() === tool.toLowerCase());
+                                                    return (
+                                                        <button
+                                                            key={tool}
+                                                            type="button"
+                                                            onClick={() => (isSelected ? removeTool(tool) : setFormData(prev => ({ ...prev, tools: [...prev.tools, tool] })))}
+                                                            className={cn(
+                                                                'px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-all flex items-center gap-1.5',
+                                                                isSelected
+                                                                    ? 'bg-purple-100 dark:bg-purple-900/40 border-purple-400 dark:border-purple-600 text-purple-800 dark:text-purple-200'
+                                                                    : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+                                                            )}
+                                                        >
+                                                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                            {tool}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </CardBody>
+                    </Card>
+                )}
+
                 {/* Navigation Buttons */}
                 <div className="flex justify-between mt-6">
                     <Button
@@ -630,21 +786,34 @@ function Step1BasicInfoStudent({ formData, onChange, toggleSkill, updateSkillLev
 
                 {/* Selected Skills with Levels */}
                 {formData.selectedSkills.length > 0 && (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mt-4">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Rate your proficiency:</p>
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/70 dark:to-gray-800/50 rounded-xl p-5 mt-4 border border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <Target className="w-4 h-4 text-primary-500" />
+                            Rate your proficiency
+                        </p>
                         <div className="space-y-3">
                             {formData.selectedSkills.map(skill => (
-                                <div key={skill.name} className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{skill.name}</span>
-                                    <select
-                                        value={skill.level}
-                                        onChange={(e) => updateSkillLevel(skill.name, e.target.value as SkillLevel)}
-                                        className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                    >
-                                        <option value="beginner">Beginner</option>
-                                        <option value="intermediate">Intermediate</option>
-                                        <option value="advanced">Advanced</option>
-                                    </select>
+                                <div key={skill.name} className="flex items-center justify-between bg-white dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{skill.name}</span>
+                                    <div className="flex items-center gap-1">
+                                        {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map((level) => (
+                                            <button
+                                                key={level}
+                                                type="button"
+                                                onClick={() => updateSkillLevel(skill.name, level)}
+                                                className={cn(
+                                                    'px-3 py-1.5 text-xs font-semibold rounded-md transition-all capitalize',
+                                                    skill.level === level
+                                                        ? level === 'beginner' ? 'bg-yellow-500 text-white shadow-sm'
+                                                            : level === 'intermediate' ? 'bg-blue-500 text-white shadow-sm'
+                                                                : 'bg-green-500 text-white shadow-sm'
+                                                        : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
+                                                )}
+                                            >
+                                                {level}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1076,6 +1245,7 @@ function ProfileViewMode({ userProfile, onEdit }: {
                         </CardBody>
                     </Card>
                 )}
+
             </div>
         </DashboardLayout>
     );

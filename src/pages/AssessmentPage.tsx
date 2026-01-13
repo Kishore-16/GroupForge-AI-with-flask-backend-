@@ -166,21 +166,46 @@ export function AssessmentPage() {
     const userSkills = studentProfile?.userSkills || [];
     const userTools = studentProfile?.tools || [];
 
-    // Combine profile selected skills with self-reported skills and tools
+    // Helper to get level initial (B=Beginner, I=Intermediate, A=Advanced)
+    const getLevelInitial = (level: string): string => {
+        const l = level.toLowerCase();
+        if (l === 'beginner') return 'B';
+        if (l === 'intermediate') return 'I';
+        if (l === 'advanced') return 'A';
+        return l.charAt(0).toUpperCase();
+    };
+
+    // Only show skills that have a proficiency level (from userSkills)
+    // Format: "SkillName (B)" for Beginner, "SkillName (I)" for Intermediate, "SkillName (A)" for Advanced
+    const skillsWithLevels = userSkills
+        .filter(s => s.level) // Only include skills with a level
+        .map(s => ({
+            displayName: `${s.name} (${getLevelInitial(s.level)})`,
+            baseName: s.name,
+            level: s.level,
+            isTool: false
+        }));
+
+    // Add tools (they don't have levels, so just show tool name)
+    const toolsForAssessment = userTools.map(tool => ({
+        displayName: tool,
+        baseName: tool,
+        level: '',
+        isTool: true
+    }));
+
+    // Combine skills with levels and tools
     const allSkillsAndTools = [
-        ...profileSelectedSkills.map(s => s.replace(/_/g, ' ')),
-        ...userSkills.map(s => s.name),
-        ...userTools
-    ].filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
+        ...skillsWithLevels.map(s => s.displayName),
+        ...toolsForAssessment.map(t => t.displayName)
+    ];
 
     useEffect(() => {
-        // Pre-select skills from profile (UserPlan.md: selectedSkills)
-        if (profileSelectedSkills.length > 0 && selectedSkills.length === 0) {
-            setSelectedSkills(profileSelectedSkills.map(s => s.replace(/_/g, ' ')));
-        } else if (allSkillsAndTools.length > 0 && selectedSkills.length === 0) {
+        // Pre-select skills with levels (only skills that have B/I/A level)
+        if (allSkillsAndTools.length > 0 && selectedSkills.length === 0) {
             setSelectedSkills(allSkillsAndTools.slice(0, 5)); // Select first 5 by default
         }
-    }, [profileSelectedSkills, allSkillsAndTools]);
+    }, [allSkillsAndTools]);
 
     // Anti-Cheat: Event Listeners for Quiz Security
     useEffect(() => {
@@ -289,6 +314,12 @@ export function AssessmentPage() {
     };
 
     const generateQuizQuestions = async (): Promise<MCQQuestion[]> => {
+        // Extract base skill names from "SkillName (B/I/A)" format
+        const baseSkillNames = selectedSkills.map(s => {
+            const match = s.match(/^(.+)\s*\([BIA]\)$/i);
+            return match ? match[1].trim() : s;
+        });
+
         const skillLevels = userSkills.reduce((acc, skill) => {
             acc[skill.name] = skill.level;
             return acc;
@@ -296,7 +327,7 @@ export function AssessmentPage() {
 
         const prompt = `You are an expert quiz generator. Create ${questionCount} multiple choice questions to test knowledge on the following skills/technologies:
 
-Skills/Technologies to test: ${selectedSkills.join(', ')}
+Skills/Technologies to test: ${baseSkillNames.join(', ')}
 
 User's skill levels (for reference):
 ${JSON.stringify(skillLevels, null, 2)}
@@ -352,11 +383,11 @@ Return ONLY the JSON array, no other text.`;
             }
             // If parsing fails, fall back to default questions
             console.warn('Failed to parse AI questions, using defaults');
-            return getDefaultQuestions(selectedSkills, questionCount);
+            return getDefaultQuestions(baseSkillNames, questionCount);
         } catch (err) {
             console.error('Error generating questions, using fallback:', err);
             // Return default questions on any error
-            return getDefaultQuestions(selectedSkills, questionCount);
+            return getDefaultQuestions(baseSkillNames, questionCount);
         }
     };
 
@@ -592,17 +623,17 @@ Return ONLY the JSON array, no other text.`;
         );
     }
 
-    // No skills selected in profile (UserPlan.md: selectedSkills must be set)
-    if (profileSelectedSkills.length === 0 && allSkillsAndTools.length === 0) {
+    // No skills with levels in profile (only skills with B/I/A level can be tested)
+    if (allSkillsAndTools.length === 0) {
         return (
             <DashboardLayout>
                 <div className="max-w-2xl mx-auto">
                     <Card>
                         <CardBody className="py-16 text-center">
                             <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Skills Selected</h2>
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Skills with Proficiency Levels</h2>
                             <p className="text-gray-500 dark:text-gray-400 mb-6">
-                                Please select skills in your profile first to take a skill assessment quiz.
+                                Please add skills with proficiency levels (Beginner, Intermediate, or Advanced) in your profile to take a skill assessment quiz.
                             </p>
                             <Button onClick={() => window.location.href = '/profile'}>
                                 Go to Profile
@@ -928,7 +959,6 @@ Return ONLY the JSON array, no other text.`;
                         <div className="flex flex-wrap gap-2">
                             {allSkillsAndTools.map(skill => {
                                 const isSelected = selectedSkills.includes(skill);
-                                const userSkill = userSkills.find(s => s.name === skill);
 
                                 return (
                                     <button
@@ -943,11 +973,6 @@ Return ONLY the JSON array, no other text.`;
                                             }`}
                                     >
                                         {skill}
-                                        {userSkill && (
-                                            <span className="ml-1 opacity-70">
-                                                ({userSkill.level.charAt(0).toUpperCase()})
-                                            </span>
-                                        )}
                                     </button>
                                 );
                             })}

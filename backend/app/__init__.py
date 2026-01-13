@@ -4,7 +4,9 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from project root even when running from backend/ directory
+ROOT_ENV_PATH = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+load_dotenv(ROOT_ENV_PATH)
 
 from app.extensions import cors, jwt, mongo, socketio
 from app.routes import auth, users, resumes, assessments, teams, analytics, health

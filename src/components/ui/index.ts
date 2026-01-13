@@ -6,3 +6,4 @@ export { ThemeToggle } from './ThemeToggle';
 export { RealTimeStatus } from './RealTimeStatus';
 export { RealTimeNotifications } from './RealTimeNotifications';
 export { ChatPanel } from './ChatPanel';
+export { ResumeUpload } from './ResumeUpload';
