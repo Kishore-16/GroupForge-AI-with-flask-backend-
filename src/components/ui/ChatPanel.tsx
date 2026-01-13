@@ -192,7 +192,7 @@ export function ChatPanel({
                         {messages.map((message, idx) => {
                             const prevMessage = idx > 0 ? messages[idx - 1] : null;
                             const isConsecutive = prevMessage && prevMessage.userId === message.userId;
-                            
+
                             return (
                                 <div
                                     key={message.id}
@@ -223,7 +223,7 @@ export function ChatPanel({
                                                 {message.displayName}
                                             </p>
                                         )}
-                                        
+
                                         <div
                                             className={`px-3 py-2 rounded-lg text-sm ${message.userId === currentUserId
                                                 ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-br-none'
@@ -274,38 +274,38 @@ export function ChatPanel({
                                     {/* Message Actions */}
                                     {message.userId === currentUserId && (
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setMenuOpenMessageId(
-                                                    menuOpenMessageId === message.id ? null : message.id
-                                                )}
-                                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                                            >
-                                                <MoreVertical className="w-4 h-4 text-gray-500" />
-                                            </button>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setMenuOpenMessageId(
+                                                        menuOpenMessageId === message.id ? null : message.id
+                                                    )}
+                                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                                                >
+                                                    <MoreVertical className="w-4 h-4 text-gray-500" />
+                                                </button>
 
-                                            {menuOpenMessageId === message.id && (
-                                                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-200 dark:border-gray-700">
-                                                    <button
-                                                        onClick={() => handleEditMessage(message)}
-                                                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors first:rounded-t-lg"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteMessage(message.id)}
-                                                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors last:rounded-b-lg"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
+                                                {menuOpenMessageId === message.id && (
+                                                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                                                        <button
+                                                            onClick={() => handleEditMessage(message)}
+                                                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors first:rounded-t-lg"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteMessage(message.id)}
+                                                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors last:rounded-b-lg"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
                             );
                         })}
 

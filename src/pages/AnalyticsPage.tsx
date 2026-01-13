@@ -200,8 +200,8 @@ export function AnalyticsPage() {
                                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Completed Assessment</span>
                                         <span className="text-lg font-bold text-gray-900 dark:text-white">{analytics.completedAssessments} ({analytics.assessmentRate}%)</span>
                                     </div>
-                                    <div 
-                                        className="h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-md transition-all" 
+                                    <div
+                                        className="h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-md transition-all"
                                         style={{ width: `${(analytics.completedAssessments / analytics.totalStudents) * 100}%` }}
                                     ></div>
                                 </div>
@@ -219,8 +219,8 @@ export function AnalyticsPage() {
                                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Eligible for Team Formation</span>
                                         <span className="text-lg font-bold text-gray-900 dark:text-white">{analytics.eligibleForTeams}</span>
                                     </div>
-                                    <div 
-                                        className="h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg shadow-md transition-all" 
+                                    <div
+                                        className="h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg shadow-md transition-all"
                                         style={{ width: `${(analytics.eligibleForTeams / analytics.totalStudents) * 100}%` }}
                                     ></div>
                                 </div>
@@ -257,8 +257,8 @@ export function AnalyticsPage() {
                                 <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
                                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Avg Team Size</span>
                                     <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                        {analytics.completedAssessments > 0 && analytics.totalTeams > 0 
-                                            ? Math.round(analytics.completedAssessments / analytics.totalTeams) 
+                                        {analytics.completedAssessments > 0 && analytics.totalTeams > 0
+                                            ? Math.round(analytics.completedAssessments / analytics.totalTeams)
                                             : 0}
                                     </span>
                                 </div>

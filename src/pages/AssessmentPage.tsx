@@ -153,12 +153,12 @@ export function AssessmentPage() {
     const [questionCount, setQuestionCount] = useState(10);
 
     const studentProfile = userProfile as StudentProfile | null;
-    
+
     // Following UserPlan.md: Use selectedSkills from profile (set during profile completion)
     const profileSelectedSkills = studentProfile?.selectedSkills || [];
     const userSkills = studentProfile?.userSkills || [];
     const userTools = studentProfile?.tools || [];
-    
+
     // Combine profile selected skills with self-reported skills and tools
     const allSkillsAndTools = [
         ...profileSelectedSkills.map(s => s.replace(/_/g, ' ')),
