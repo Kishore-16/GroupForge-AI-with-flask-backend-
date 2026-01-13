@@ -1,7 +1,0 @@
-```
-  "icebreakerPrompt": "",
-  "languages": [],
-  "linkedinUrl": "",
-    "portfolioUrl": "",
-
-```
