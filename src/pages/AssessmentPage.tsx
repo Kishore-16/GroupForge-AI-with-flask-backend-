@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button } from '../components/ui';
 import { useAuth } from '../contexts';
@@ -14,7 +14,9 @@ import {
     Trophy,
     Target,
     AlertCircle,
-    RefreshCw
+    RefreshCw,
+    Maximize,
+    ShieldAlert
 } from 'lucide-react';
 
 interface MCQQuestion {
@@ -141,7 +143,7 @@ interface QuizResults {
 }
 
 export function AssessmentPage() {
-    const { currentUser, userProfile } = useAuth();
+    const { currentUser, userProfile, logout } = useAuth();
     const [quizSession, setQuizSession] = useState<QuizSession | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [showResult, setShowResult] = useState(false);
@@ -151,6 +153,11 @@ export function AssessmentPage() {
     const [quizResults, setQuizResults] = useState<QuizResults | null>(null);
     const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
     const [questionCount, setQuestionCount] = useState(10);
+
+    // Anti-cheat states
+    const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const assessmentContainerRef = useRef<HTMLDivElement>(null);
 
     const studentProfile = userProfile as StudentProfile | null;
 
@@ -174,6 +181,104 @@ export function AssessmentPage() {
             setSelectedSkills(allSkillsAndTools.slice(0, 5)); // Select first 5 by default
         }
     }, [profileSelectedSkills, allSkillsAndTools]);
+
+    // Anti-Cheat: Event Listeners for Quiz Security
+    useEffect(() => {
+        if (!quizSession || quizSession.status !== 'active') return;
+
+        // 1. BLUR EVENT - Log out user if they switch tabs
+        const handleBlur = async () => {
+            console.warn('Tab switch detected during assessment - logging out user');
+            alert('Assessment security violation: You switched tabs or windows. You will be logged out.');
+            await logout();
+            window.location.href = '/login';
+        };
+
+        // 2. FULLSCREEN CHANGE - Enforce fullscreen mode
+        const handleFullscreenChange = () => {
+            const isCurrentlyFullscreen = !!(
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).mozFullScreenElement ||
+                (document as any).msFullscreenElement
+            );
+
+            setIsFullscreen(isCurrentlyFullscreen);
+
+            if (!isCurrentlyFullscreen && quizSession.status === 'active') {
+                setShowFullscreenWarning(true);
+            }
+        };
+
+        // 3. DISABLE RIGHT CLICK
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+            return false;
+        };
+
+        // 4. DISABLE TEXT SELECTION (prevents copying questions)
+        const handleSelectStart = (e: Event) => {
+            e.preventDefault();
+            return false;
+        };
+
+        // 5. DISABLE COPY/PASTE
+        const handleCopy = (e: ClipboardEvent) => {
+            e.preventDefault();
+            return false;
+        };
+
+        const handleCut = (e: ClipboardEvent) => {
+            e.preventDefault();
+            return false;
+        };
+
+        const handlePaste = (e: ClipboardEvent) => {
+            e.preventDefault();
+            return false;
+        };
+
+        // Add all event listeners
+        window.addEventListener('blur', handleBlur);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        document.addEventListener('contextmenu', handleContextMenu);
+        document.addEventListener('selectstart', handleSelectStart);
+        document.addEventListener('copy', handleCopy);
+        document.addEventListener('cut', handleCut);
+        document.addEventListener('paste', handlePaste);
+
+        // Cleanup on unmount or quiz completion
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+            document.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('selectstart', handleSelectStart);
+            document.removeEventListener('copy', handleCopy);
+            document.removeEventListener('cut', handleCut);
+            document.removeEventListener('paste', handlePaste);
+        };
+    }, [quizSession, logout]);
+
+    // Helper function to enter fullscreen
+    const enterFullscreen = () => {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if ((elem as any).webkitRequestFullscreen) {
+            (elem as any).webkitRequestFullscreen();
+        } else if ((elem as any).mozRequestFullScreen) {
+            (elem as any).mozRequestFullScreen();
+        } else if ((elem as any).msRequestFullscreen) {
+            (elem as any).msRequestFullscreen();
+        }
+        setShowFullscreenWarning(false);
+    };
 
     const toggleSkillSelection = (skill: string) => {
         setSelectedSkills(prev =>
@@ -284,6 +389,11 @@ Return ONLY the JSON array, no other text.`;
             };
 
             setQuizSession(session);
+
+            // Enter fullscreen mode when quiz starts
+            setTimeout(() => {
+                enterFullscreen();
+            }, 500);
 
             // Firebase database removed
             console.warn('Firebase database removed - quiz session not saved');
@@ -602,7 +712,44 @@ Return ONLY the JSON array, no other text.`;
 
         return (
             <DashboardLayout>
-                <div className="max-w-3xl mx-auto space-y-6">
+                <div className="max-w-3xl mx-auto space-y-6" ref={assessmentContainerRef}>
+                    {/* Fullscreen Warning Modal */}
+                    {showFullscreenWarning && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <Card className="max-w-md w-full border-2 border-yellow-500 shadow-2xl">
+                                <CardBody className="py-8 text-center space-y-4">
+                                    <ShieldAlert className="w-16 h-16 text-yellow-500 mx-auto" />
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                        Fullscreen Required
+                                    </h2>
+                                    <p className="text-gray-600 dark:text-gray-300">
+                                        For security and integrity, this assessment must be completed in fullscreen mode.
+                                    </p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        Exiting fullscreen during the test is not allowed.
+                                    </p>
+                                    <Button
+                                        onClick={enterFullscreen}
+                                        className="w-full shadow-lg"
+                                        size="lg"
+                                    >
+                                        <Maximize className="w-5 h-5 mr-2" />
+                                        Enter Fullscreen Mode
+                                    </Button>
+                                </CardBody>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* Anti-Cheat Notice */}
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-lg flex items-start gap-2 text-sm">
+                        <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <strong>Assessment Security Active:</strong> Right-click, copying, and tab switching are disabled.
+                            Switching tabs will result in automatic logout.
+                        </div>
+                    </div>
+
                     {/* Error Display */}
                     {error && (
                         <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg">
@@ -625,7 +772,7 @@ Return ONLY the JSON array, no other text.`;
                     </div>
 
                     {/* Question Card */}
-                    <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 select-none">
                         <CardHeader className="border-b border-gray-200 dark:border-gray-800">
                             <div className="flex items-center gap-2">
                                 <span className="px-3 py-1 bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-200 text-sm font-semibold rounded-full">
@@ -640,7 +787,7 @@ Return ONLY the JSON array, no other text.`;
                             </div>
                         </CardHeader>
                         <CardBody className="space-y-6">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed select-none">
                                 {currentQuestion.question}
                             </h2>
 
@@ -667,16 +814,16 @@ Return ONLY the JSON array, no other text.`;
                                             key={index}
                                             onClick={() => !showResult && setSelectedAnswer(index)}
                                             disabled={showResult}
-                                            className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg text-left transition-all shadow-sm hover:shadow-md ${optionClass}`}
+                                            className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg text-left transition-all shadow-sm hover:shadow-md select-none ${optionClass}`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-medium ${showCorrectness && isCorrect ? 'border-green-500 bg-green-500 text-white' :
+                                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-medium select-none ${showCorrectness && isCorrect ? 'border-green-500 bg-green-500 text-white' :
                                                 showCorrectness && isSelected && !isCorrect ? 'border-red-500 bg-red-500 text-white' :
                                                     isSelected ? 'border-primary-500 bg-primary-500 text-white' :
                                                         'border-gray-300 text-gray-500 dark:border-gray-500 dark:text-gray-300'
                                                 }`}>
                                                 {String.fromCharCode(65 + index)}
                                             </div>
-                                            <span className={`flex-1 ${showCorrectness && isCorrect ? 'text-green-700 dark:text-green-100 font-semibold' :
+                                            <span className={`flex-1 select-none ${showCorrectness && isCorrect ? 'text-green-700 dark:text-green-100 font-semibold' :
                                                 showCorrectness && isSelected && !isCorrect ? 'text-red-700 dark:text-red-100' :
                                                     'text-gray-800 dark:text-gray-100'
                                                 }`}>

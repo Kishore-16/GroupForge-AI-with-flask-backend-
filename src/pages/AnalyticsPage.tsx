@@ -37,10 +37,36 @@ export function AnalyticsPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (userProfile?.role === 'faculty' && userProfile?.uid) {
-            fetchAnalytics();
+        // Clear data immediately if user is not authenticated or not faculty
+        if (!userProfile?.uid || userProfile?.role !== 'faculty') {
+            setAnalytics({
+                totalStudents: 0,
+                totalTeams: 0,
+                assessmentRate: 0,
+                completedAssessments: 0,
+                pendingAssessments: 0,
+                eligibleForTeams: 0
+            });
+            setLoading(false);
+            return;
         }
-    }, [userProfile]);
+
+        fetchAnalytics();
+
+        // Cleanup: Clear data when component unmounts or user logs out
+        return () => {
+            if (!userProfile?.uid) {
+                setAnalytics({
+                    totalStudents: 0,
+                    totalTeams: 0,
+                    assessmentRate: 0,
+                    completedAssessments: 0,
+                    pendingAssessments: 0,
+                    eligibleForTeams: 0
+                });
+            }
+        };
+    }, [userProfile?.uid, userProfile?.role]);
 
     const fetchAnalytics = async () => {
         try {

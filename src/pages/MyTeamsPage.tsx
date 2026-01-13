@@ -41,44 +41,20 @@ export function MyTeamsPage() {
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
     const [showChatPanel, setShowChatPanel] = useState(false);
 
-    // Listen for real-time team updates
-    useEffect(() => {
-        onTeamFormed((data) => {
-            console.log('New team formed:', data);
-            // Check if the current user is in the new team
-            const isUserInTeam = data.data?.members?.some((member: any) =>
-                member.userId === userProfile?.id || member.studentId === userProfile?.id
-            );
-
-            if (isUserInTeam) {
-                setRealtimeUpdate(`You've been added to team: ${data.data?.teamName}`);
-                // Refresh team data
-                loadTeamData();
-
-                setTimeout(() => setRealtimeUpdate(null), 5000);
-            }
-        });
-
-        onTeamUpdated((data) => {
-            console.log('Team updated:', data);
-            setRealtimeUpdate(`Team "${data.data?.teamName}" has been updated`);
-            // Refresh team data
-            loadTeamData();
-
-            setTimeout(() => setRealtimeUpdate(null), 5000);
-        });
-    }, [onTeamFormed, onTeamUpdated, userProfile?.id]);
-
     // Following UserPlan.md: Check if student is in a team using inTeam and teamId
     const studentProfile = userProfile as StudentProfile | null;
     const isInTeam = studentProfile?.inTeam || false;
     const teamId = studentProfile?.teamId;
 
     const loadTeamData = async () => {
+        // Clear data immediately if user is not authenticated
         if (!userProfile?.uid) {
+            setTeams([]);
             setLoading(false);
             return;
         }
+
+        setLoading(true);
 
         try {
             // Following UserPlan.md: Check inTeam flag first
@@ -104,9 +80,47 @@ export function MyTeamsPage() {
         }
     };
 
+    // Load team data when user profile changes or when user logs in/out
     useEffect(() => {
         loadTeamData();
+
+        // Cleanup: Clear teams when component unmounts or user logs out
+        return () => {
+            if (!userProfile?.uid) {
+                setTeams([]);
+            }
+        };
     }, [userProfile?.uid, isInTeam, teamId]);
+
+    // Listen for real-time team updates
+    useEffect(() => {
+        if (!userProfile?.uid) return;
+
+        onTeamFormed((data) => {
+            console.log('New team formed:', data);
+            // Check if the current user is in the new team
+            const isUserInTeam = data.data?.members?.some((member: any) =>
+                member.userId === userProfile?.uid || member.studentId === userProfile?.uid
+            );
+
+            if (isUserInTeam) {
+                setRealtimeUpdate(`You've been added to team: ${data.data?.teamName}`);
+                // Refresh team data
+                loadTeamData();
+
+                setTimeout(() => setRealtimeUpdate(null), 5000);
+            }
+        });
+
+        onTeamUpdated((data) => {
+            console.log('Team updated:', data);
+            setRealtimeUpdate(`Team "${data.data?.teamName}" has been updated`);
+            // Refresh team data
+            loadTeamData();
+
+            setTimeout(() => setRealtimeUpdate(null), 5000);
+        });
+    }, [onTeamFormed, onTeamUpdated, userProfile?.uid]);
 
     if (loading) {
         return (
@@ -305,10 +319,10 @@ export function MyTeamsPage() {
                     <div className={showChatPanel ? 'lg:col-span-2' : 'col-span-1'}>
                         <div className="space-y-6">
                             {teams.map((team) => (
-                                <TeamDetailCard 
-                                    key={team.teamId} 
-                                    team={team} 
-                                    currentUserId={userProfile?.uid || ''} 
+                                <TeamDetailCard
+                                    key={team.teamId}
+                                    team={team}
+                                    currentUserId={userProfile?.uid || ''}
                                     onOpenChat={() => {
                                         setSelectedTeamId(team.teamId);
                                         setShowChatPanel(true);

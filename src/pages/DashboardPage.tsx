@@ -527,7 +527,18 @@ function FacultyDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!userProfile?.uid) return;
+        // Clear data immediately if user is not authenticated
+        if (!userProfile?.uid) {
+            setRecentTeams([]);
+            setStats({
+                totalStudents: 0,
+                teamsFormed: 0,
+                assessmentRate: 0,
+                eligibleStudents: 0
+            });
+            setLoading(false);
+            return;
+        }
 
         const fetchDashboardData = async () => {
             try {
@@ -566,7 +577,20 @@ function FacultyDashboard() {
         };
 
         fetchDashboardData();
-    }, [userProfile]);
+
+        // Cleanup: Clear data when component unmounts or user logs out
+        return () => {
+            if (!userProfile?.uid) {
+                setRecentTeams([]);
+                setStats({
+                    totalStudents: 0,
+                    teamsFormed: 0,
+                    assessmentRate: 0,
+                    eligibleStudents: 0
+                });
+            }
+        };
+    }, [userProfile?.uid]);
 
     return (
         <DashboardLayout>
