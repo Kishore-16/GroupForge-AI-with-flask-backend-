@@ -1,8 +1,16 @@
 from typing import List, Dict
 from datetime import datetime
 from bson import ObjectId
+from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
 
-from app.extensions import mongo
+load_dotenv()
+
+# Get MongoDB connection using direct MongoClient (not Flask-PyMongo)
+MONGO_URI = os.getenv('MONGO_URI')
+client = MongoClient(MONGO_URI)
+db = client['groupforge']
 
 
 class TeamService:
@@ -12,19 +20,19 @@ class TeamService:
     """
 
     def __init__(self):
-        pass  # DO NOT access mongo here (important)
+        pass
 
     def _get_teams_collection(self):
         """
-        Safely get MongoDB teams collection after app is initialized
+        Get MongoDB teams collection
         """
-        return mongo.db.teams
+        return db['teams']
 
     def _get_users_collection(self):
         """
-        Safely get MongoDB users collection after app is initialized
+        Get MongoDB users collection
         """
-        return mongo.db.users
+        return db['users']
 
     def get_eligible_students(self) -> List[Dict]:
         """
@@ -273,13 +281,27 @@ class TeamService:
             teams_collection = self._get_teams_collection()
             users_collection = self._get_users_collection()
             
-            team = teams_collection.find_one({'_id': ObjectId(team_id)})
+            # Handle ObjectId conversion safely
+            try:
+                team_obj_id = ObjectId(team_id)
+            except:
+                return None
+            
+            team = teams_collection.find_one({'_id': team_obj_id})
             if not team:
                 return None
             
             # Enrich member data with user profiles
             enriched_members = []
-            for member in team.get('members', []):
+            members = team.get('members', [])
+            
+            if members is None:
+                members = []
+            
+            for member in members:
+                if member is None:
+                    continue
+                    
                 student_id = member.get('studentId')
                 if student_id:
                     try:
@@ -296,7 +318,8 @@ class TeamService:
                                 'skills': user.get('skills', {}),
                                 'githubUsername': user.get('githubUsername', '')
                             })
-                    except Exception:
+                    except Exception as inner_e:
+                        print(f"Error enriching member {student_id}: {str(inner_e)}")
                         enriched_members.append(member)
             
             return {
@@ -319,17 +342,35 @@ class TeamService:
         try:
             users_collection = self._get_users_collection()
             
-            # First get the user to find their teamId
-            user = users_collection.find_one({'_id': ObjectId(student_id)})
-            if not user:
+            # Validate student_id
+            if not student_id:
+                print("Error: student_id is empty or None")
                 return None
             
+            # Convert to ObjectId and fetch user
+            try:
+                user_obj_id = ObjectId(student_id)
+            except Exception as e:
+                print(f"Invalid student_id format: {student_id}, error: {str(e)}")
+                return None
+            
+            user = users_collection.find_one({'_id': user_obj_id})
+            
+            if not user:
+                print(f"Student not found with id: {student_id}")
+                return None
+            
+            # Get the team ID from user document
             team_id = user.get('teamId')
             if not team_id:
+                print(f"Student {student_id} has no teamId assigned")
                 return None
             
-            # Fetch full team details
+            print(f"Found team_id for student {student_id}: {team_id}")
+            
+            # Fetch and return full team details
             return self.get_team_by_id(team_id)
+            
         except Exception as e:
-            print(f"Error in get_student_team: {str(e)}")
+            print(f"Error in get_student_team for student {student_id}: {str(e)}")
             raise

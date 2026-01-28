@@ -87,6 +87,7 @@ def get_my_team():
     """
     try:
         student_id = get_jwt_identity()
+        print(f"Fetching team for student: {student_id}")
         team = team_service.get_student_team(student_id)
 
         if team is None:
@@ -102,6 +103,9 @@ def get_my_team():
         }), 200
 
     except Exception as e:
+        import traceback
+        print(f"Error in get_my_team: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             "success": False,
             "error": str(e)
