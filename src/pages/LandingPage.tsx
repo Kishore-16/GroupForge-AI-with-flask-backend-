@@ -80,7 +80,7 @@ export function LandingPage() {
             </header>
 
             {/* Hero Section */}
-            <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+            <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-gray-950/0 dark:via-gray-900/0 dark:to-gray-950/0">
                 <div className="max-w-7xl mx-auto text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium mb-6 border border-transparent dark:border-primary-800">
                         <Sparkles className="w-4 h-4" />
