@@ -1,7 +1,6 @@
 # Environment variables (a.k.a. secrets waiting to leak)
 .env
-.env.*
-.env.example
+
 
 node_modules/
 npm-debug.log*
