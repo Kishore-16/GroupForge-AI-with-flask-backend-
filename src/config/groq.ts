@@ -8,17 +8,15 @@ import OpenAI from "openai";
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 if (!GROQ_API_KEY) {
-    console.warn("⚠️ VITE_GROQ_API_KEY is missing. AI features will be disabled.");
+    console.error("❌ VITE_GROQ_API_KEY is missing. Please set it in your .env file.");
 }
 
-// Initialize Groq client only when key is present to avoid crashes
-export const groqClient: OpenAI | null = GROQ_API_KEY
-    ? new OpenAI({
-          apiKey: GROQ_API_KEY,
-          baseURL: "https://api.groq.com/openai/v1",
-          dangerouslyAllowBrowser: true, // ⚠️ Only for development / hackathon
-      })
-    : null;
+// Initialize Groq client using OpenAI SDK with custom base URL
+export const groqClient = new OpenAI({
+    apiKey: GROQ_API_KEY,
+    baseURL: "https://api.groq.com/openai/v1",
+    dangerouslyAllowBrowser: true, // ⚠️ Only for development / hackathon
+});
 
 // Type for options
 interface GroqOptions {
@@ -33,10 +31,6 @@ export async function generateWithGroq(
     options: GroqOptions = {}
 ): Promise<string> {
     try {
-        if (!groqClient) {
-            throw new Error("AI features are unavailable: VITE_GROQ_API_KEY is not set.");
-        }
-
         if (!prompt || prompt.trim().length === 0) {
             throw new Error("Prompt is empty");
         }
