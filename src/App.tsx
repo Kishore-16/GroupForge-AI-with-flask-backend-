@@ -1,27 +1,81 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AssessmentProvider, WebSocketProvider } from './contexts';
+import { ProtectedRoute } from './components/layout';
+import {
+    LandingPage,
+    LoginPage,
+    SignupPage,
+    ForgotPasswordPage,
+    DashboardPage,
+    AssessmentPage,
+    ProfilePage,
+    MyTeamsPage,
+    TeamFormationPage,
+    AnalyticsPage,
+    SettingsPage
+} from './pages';
+import './index.css';
 
-const queryClient = new QueryClient();
+function App() {
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <WebSocketProvider>
+                    <AssessmentProvider>
+                        <Routes>
+                            {/* Public routes */}
+                            <Route path="/" element={<LandingPage />} />
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/signup" element={<SignupPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+                            {/* Profile route - protected but doesn't require complete profile */}
+                            <Route path="/profile" element={
+                                <ProtectedRoute requireProfileComplete={false}>
+                                    <ProfilePage />
+                                </ProtectedRoute>
+                            } />
+
+                            {/* Protected routes - require complete profile */}
+                            <Route path="/dashboard" element={
+                                <ProtectedRoute>
+                                    <DashboardPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/assessment" element={
+                                <ProtectedRoute>
+                                    <AssessmentPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/my-teams" element={
+                                <ProtectedRoute>
+                                    <MyTeamsPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/team-formation" element={
+                                <ProtectedRoute>
+                                    <TeamFormationPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/analytics" element={
+                                <ProtectedRoute>
+                                    <AnalyticsPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/settings" element={
+                                <ProtectedRoute>
+                                    <SettingsPage />
+                                </ProtectedRoute>
+                            } />
+
+                            {/* Fallback */}
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                    </AssessmentProvider>
+                </WebSocketProvider>
+            </AuthProvider>
+        </BrowserRouter>
+    );
+}
 
 export default App;

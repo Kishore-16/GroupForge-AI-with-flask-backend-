@@ -1,73 +1,158 @@
-# Welcome to your Lovable project
+# GroupForge AI
 
-## Project info
+**Intelligent Team Formation for Academia**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+GroupForge AI is a web-based platform that uses Google Gemini to conduct adaptive skill assessments and form balanced, complementary student teams.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- 🧠 **AI-Powered Skill Assessments** - Adaptive evaluations using Google Gemini
+- 👥 **Intelligent Team Formation** - Balanced teams based on leadership, creativity, analytical thinking, and execution
+- 📊 **Faculty Dashboards** - Analytics and team management tools
+- � **GitHub Integration** - Analyze coding profiles for technical skill verification
+- 📄 **Resume Analysis** - Optional CV parsing to enrich skill profiles
+- 🔐 **Firebase Authentication** - Secure login with Google/GitHub/email
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend**: React 18 + TypeScript + Tailwind CSS
+- **Backend**: Firebase (Auth, Firestore, Storage, Functions)
+- **AI**: Google Gemini 2.0 Flash
+- **Routing**: React Router v6
+- **Build**: Vite
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+
+- npm or yarn
+- Firebase project
+- Google Gemini API key
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+1. Clone the repository:
+   ```bash
+   cd groupforge-ai
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. Create a `.env` file based on `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. Add your Firebase and Gemini credentials to `.env`
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Firebase Setup
+
+1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
+2. Enable Authentication (Email/Password, Google, and GitHub providers)
+3. Create a Firestore database
+4. Enable Storage
+5. Copy your config values to `.env`
+
+### GitHub OAuth Setup
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Click "New OAuth App"
+3. Fill in:
+   - Application name: GroupForge AI
+   - Homepage URL: `http://localhost:5173` (development) or your production URL
+   - Authorization callback URL: Your Firebase Auth domain (e.g., `your-project.firebaseapp.com/__/auth/handler`)
+4. Copy the Client ID and Client Secret
+5. In Firebase Console > Authentication > Sign-in method > GitHub:
+   - Enable GitHub provider
+   - Add your Client ID and Client Secret
+   - Copy the callback URL if needed
+
+## Firestore Rules
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Assessments are private to the user
+    match /assessments/{assessmentId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Teams are readable by members
+    match /teams/{teamId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty';
+    }
+    
+    // Courses are readable by enrolled students and faculty
+    match /courses/{courseId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['faculty', 'admin'];
+    }
+  }
+}
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+groupforge-ai/
+├── src/
+│   ├── components/
+│   │   ├── layout/       # Sidebar, DashboardLayout
+│   │   └── ui/           # Button, Card, Input, SkillBar
+│   ├── config/
+│   │   ├── firebase.ts   # Firebase initialization
+│   │   └── gemini.ts     # Gemini AI configuration
+│   ├── contexts/
+│   │   ├── AuthContext.tsx
+│   │   └── AssessmentContext.tsx
+│   ├── pages/
+│   │   ├── LandingPage.tsx
+│   │   ├── LoginPage.tsx
+│   │   ├── SignupPage.tsx
+│   │   ├── DashboardPage.tsx
+│   │   └── AssessmentPage.tsx
+│   ├── services/
+│   │   ├── teamFormation.ts
+│   │   └── resumeParser.ts
+│   ├── types/
+│   │   ├── user.ts
+│   │   ├── assessment.ts
+│   │   ├── team.ts
+│   │   └── course.ts
+│   ├── lib/
+│   │   └── utils.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── tsconfig.json
+└── vite.config.ts
+```
 
-**Use GitHub Codespaces**
+## we use 3 algorithms for teamformation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## License
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT

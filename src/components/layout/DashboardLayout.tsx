@@ -1,0 +1,89 @@
+import { ReactNode, useState, useEffect } from 'react';
+import { Navigate, Link, useLocation } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { useAuth } from '../../contexts';
+import { RealTimeNotifications } from '../ui';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+interface DashboardLayoutProps {
+    children: ReactNode;
+}
+
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+    const { currentUser, userProfile, loading } = useAuth();
+    const location = useLocation();
+    const isProfilePage = location.pathname === '/profile';
+    const showProfileBanner = !userProfile?.profileCompleted && !isProfilePage;
+
+    // Track sidebar collapsed state
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        const saved = localStorage.getItem('sidebarCollapsed');
+        return saved === 'true';
+    });
+
+    // Listen for storage changes to sync sidebar state
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const saved = localStorage.getItem('sidebarCollapsed');
+            setIsSidebarCollapsed(saved === 'true');
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        // Also check periodically for same-tab changes
+        const interval = setInterval(handleStorageChange, 100);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+                <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
+            </div>
+        );
+    }
+
+    if (!currentUser) {
+        return <Navigate to="/login" replace />;
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 dark:bg-[#030712] text-gray-900 dark:text-gray-100">
+            <Sidebar />
+            <main className={cn(
+                "transition-all duration-300 dark:bg-gradient-to-br dark:from-gray-950 dark:via-[#030712] dark:to-gray-950",
+                isSidebarCollapsed ? "ml-20" : "ml-64"
+            )}>
+                {/* Profile Completion Banner */}
+                {showProfileBanner && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-800 px-8 py-4">
+                        <div className="flex items-center gap-3">
+                            <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                            <div className="flex-1">
+                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                    <strong>Complete your profile</strong> to access all features and team formation capabilities.
+                                </p>
+                            </div>
+                            <Link
+                                to="/profile"
+                                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                            >
+                                Complete Profile
+                            </Link>
+                        </div>
+                    </div>
+                )}
+                <div className="p-8">
+                    {children}
+                </div>
+            </main>
+
+            {/* Real-time Notifications */}
+            <RealTimeNotifications />
+        </div>
+    );
+}
