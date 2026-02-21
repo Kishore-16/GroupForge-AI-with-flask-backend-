@@ -16,10 +16,10 @@ export function SkillBar({ label, score, confidence, showValue = true, size = 'm
     };
 
     const getColor = (score: number) => {
-        if (score >= 80) return 'bg-green-500';
-        if (score >= 60) return 'bg-blue-500';
-        if (score >= 40) return 'bg-yellow-500';
-        return 'bg-red-500';
+        if (score >= 80) return 'bg-gradient-to-r from-accent-500 to-teal-500';
+        if (score >= 60) return 'bg-gradient-to-r from-primary-500 to-accent-500';
+        if (score >= 40) return 'bg-gradient-to-r from-yellow-500 to-primary-500';
+        return 'bg-gradient-to-r from-red-500 to-yellow-500';
     };
 
     const confidenceStyles = {
@@ -39,10 +39,10 @@ export function SkillBar({ label, score, confidence, showValue = true, size = 'm
                     </span>
                 )}
             </div>
-            <div className={cn('w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden', heights[size])}>
+            <div className={cn('w-full bg-gray-200/50 dark:bg-slate-700/50 rounded-full overflow-hidden', heights[size])}>
                 <div
                     className={cn(
-                        'h-full rounded-full transition-all duration-500',
+                        'h-full rounded-full transition-all duration-700 shadow-lg',
                         getColor(score),
                         confidenceStyles[confidence]
                     )}
@@ -77,9 +77,9 @@ export function SkillSummaryGrid({ skills }: SkillRadarProps) {
     return (
         <div className="grid grid-cols-2 gap-4">
             {Object.entries(skills).map(([key, value]) => (
-                <div key={key} className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{value}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300">{skillLabels[key] || key}</div>
+                <div key={key} className="text-center p-4 bg-gradient-to-br from-primary-600/10 to-accent-600/10 dark:from-purple-600/20 dark:to-teal-600/20 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-purple-500/20 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">{value}</div>
+                    <div className="text-xs text-gray-600 dark:text-slate-300 mt-1">{skillLabels[key] || key}</div>
                 </div>
             ))}
         </div>

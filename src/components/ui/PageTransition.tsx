@@ -8,7 +8,7 @@ interface PageTransitionProps {
 
 export function PageTransition({ children, className }: PageTransitionProps) {
     return (
-        <div className={cn('animate-fade-in-up', className)}>
+        <div className={cn('animate-pageSlideIn', className)}>
             {children}
         </div>
     );
@@ -20,13 +20,13 @@ interface StaggerChildrenProps {
     staggerMs?: number;
 }
 
-export function StaggerChildren({ children, className, staggerMs = 80 }: StaggerChildrenProps) {
+export function StaggerChildren({ children, className, staggerMs = 100 }: StaggerChildrenProps) {
     return (
         <>
             {children.map((child, i) => (
                 <div
                     key={i}
-                    className={cn('animate-fade-in-up', className)}
+                    className={cn('animate-staggerFadeIn', className)}
                     style={{ animationDelay: `${i * staggerMs}ms` }}
                 >
                     {child}

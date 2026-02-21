@@ -202,12 +202,12 @@ export function LandingPage() {
                 </header>
 
                 {/* ─── Hero ─── */}
-                <section className="relative pt-36 pb-32 px-4 overflow-hidden">
+                <section className="relative pt-40 pb-36 px-4 overflow-hidden">
                     {/* Background decorations */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-violet-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-violet-50 dark:from-slate-950 dark:via-purple-950/30 dark:to-slate-950" />
                     <div className="absolute inset-0 light-mesh-bg dark:hidden" />
-                    <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary-400/10 dark:bg-primary-500/5 rounded-full blur-3xl" />
-                    <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-violet-400/10 dark:bg-violet-500/5 rounded-full blur-3xl" />
+                    <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary-400/10 dark:bg-primary-600/8 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-violet-400/10 dark:bg-purple-600/8 rounded-full blur-3xl" />
                     <LightOrbs />
                     <SparkleField count={15} />
                     <Meteors count={8} />
@@ -216,7 +216,7 @@ export function LandingPage() {
                     <div className="max-w-7xl mx-auto text-center relative">
                         {/* Badge */}
                         <div className="animate-fade-in-up" style={{ animationDelay: '0ms' }}>
-                            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-100/80 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-semibold mb-10 border border-primary-200 dark:border-primary-800/50 pulse-ring backdrop-blur-sm">
+                            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-100/80 dark:bg-purple-900/40 text-primary-700 dark:text-primary-200 rounded-full text-sm font-semibold mb-10 border border-primary-200 dark:border-purple-500/30 pulse-ring backdrop-blur-xl hover:shadow-lg dark:hover:shadow-purple-500/20 transition-all duration-300">
                                 <Sparkles className="w-4 h-4 animate-spin-slow" style={{ animationDuration: '6s' }} />
                                 Powered by Google Gemini AI
                                 <ChevronRight className="w-3.5 h-3.5" />
@@ -333,7 +333,7 @@ export function LandingPage() {
                 </section>
 
                 {/* ─── Stats ─── */}
-                <section className="py-16 px-4 relative border-y border-gray-100 dark:border-gray-800/50 bg-gray-50/50 dark:bg-gray-900/30">
+                <section className="py-20 px-4 relative border-y border-gray-100 dark:border-purple-500/10 bg-gray-50/50 dark:bg-slate-900/30 backdrop-blur-xl">
                     <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
                         <StatCard value={10} suffix="K+" label="Teams Formed" icon={Users} delay={0} />
                         <StatCard value={98} suffix="%" label="Satisfaction Rate" icon={Star} delay={100} />
