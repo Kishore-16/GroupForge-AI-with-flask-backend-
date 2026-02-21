@@ -7,7 +7,7 @@ interface GlowCardProps {
     glowColor?: string;
 }
 
-export function GlowCard({ children, className, glowColor = 'hsla(221,83%,53%,0.15)' }: GlowCardProps) {
+export function GlowCard({ children, className, glowColor = 'hsla(270,70%,50%,0.2)' }: GlowCardProps) {
     const cardRef = useRef<HTMLDivElement>(null);
     const [spotlight, setSpotlight] = useState({ x: 0, y: 0, opacity: 0 });
 
@@ -31,7 +31,7 @@ export function GlowCard({ children, className, glowColor = 'hsla(221,83%,53%,0.
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                'relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-primary-500/10',
+                'relative overflow-hidden rounded-2xl border border-gray-200 dark:border-purple-500/15 bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl transition-all duration-300 hover:scale-[1.04] hover:shadow-xl dark:hover:shadow-purple-500/30',
                 className
             )}
         >
@@ -40,7 +40,7 @@ export function GlowCard({ children, className, glowColor = 'hsla(221,83%,53%,0.
                 className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
                 style={{
                     opacity: spotlight.opacity,
-                    background: `radial-gradient(300px circle at ${spotlight.x}px ${spotlight.y}px, ${glowColor}, transparent 70%)`,
+                    background: `radial-gradient(350px circle at ${spotlight.x}px ${spotlight.y}px, ${glowColor}, transparent 70%)`,
                 }}
             />
             <div className="relative z-20">{children}</div>
