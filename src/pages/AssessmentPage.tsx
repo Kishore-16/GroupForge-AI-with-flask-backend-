@@ -3,7 +3,7 @@ import { DashboardLayout } from '../components/layout';
 import { Card, CardBody, CardHeader, Button } from '../components/ui';
 import { useAuth } from '../contexts';
 import { generateWithGroq } from '../config/groq';
-import { StudentProfile, canTakeAssessment } from '../types';
+import { StudentProfile } from '../types';
 import { authApi } from '../services/authApi';
 import {
     Brain,
@@ -156,13 +156,14 @@ export function AssessmentPage() {
 
     // Anti-cheat states
     const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [, setIsFullscreen] = useState(false);
     const assessmentContainerRef = useRef<HTMLDivElement>(null);
 
     const studentProfile = userProfile as StudentProfile | null;
 
     // Following UserPlan.md: Use selectedSkills from profile (set during profile completion)
-    const profileSelectedSkills = studentProfile?.selectedSkills || [];
+    // profileSelectedSkills used for future feature
+    void (studentProfile?.selectedSkills || []);
     const userSkills = studentProfile?.userSkills || [];
     const userTools = studentProfile?.tools || [];
 

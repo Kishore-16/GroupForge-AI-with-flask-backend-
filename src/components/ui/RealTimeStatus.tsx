@@ -3,7 +3,7 @@
  * Shows WebSocket connection status and real-time capabilities
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useWebSocket } from '../../contexts';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
 

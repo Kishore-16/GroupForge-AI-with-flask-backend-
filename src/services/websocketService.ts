@@ -5,8 +5,6 @@
 
 import { io, Socket } from 'socket.io-client';
 
-type EventCallback = (...args: any[]) => void;
-
 interface WebSocketEventHandlers {
     // Connection events
     connected: (data: any) => void;

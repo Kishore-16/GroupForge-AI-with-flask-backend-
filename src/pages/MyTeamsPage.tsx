@@ -11,7 +11,6 @@ import {
     TrendingUp,
     MessageSquare,
     Mail,
-    ExternalLink,
     Video,
     Sparkles,
     CheckCircle2,
@@ -19,7 +18,6 @@ import {
     User,
     Bell,
     MessageCircle,
-    Settings,
     UserPlus,
     Calendar,
     Target,
@@ -27,9 +25,7 @@ import {
     Share2
 } from 'lucide-react';
 
-interface TeamWithDetails extends Team {
-    memberProfiles: StudentProfile[];
-}
+type TeamWithDetails = StudentTeam;
 
 export function MyTeamsPage() {
     const { userProfile } = useAuth();
@@ -42,7 +38,7 @@ export function MyTeamsPage() {
     const [showChatPanel, setShowChatPanel] = useState(false);
 
     // Following UserPlan.md: Check if student is in a team using inTeam and teamId
-    const studentProfile = userProfile as StudentProfile | null;
+    const studentProfile = userProfile as (import('../types').StudentProfile) | null;
     const isInTeam = studentProfile?.inTeam || false;
     const teamId = studentProfile?.teamId;
 
@@ -384,10 +380,10 @@ function TeamDetailCard({ team, currentUserId, onOpenChat }: { team: TeamWithDet
                                     <Users className="w-4 h-4" />
                                     {memberCount} {memberCount === 1 ? 'Member' : 'Members'}
                                 </div>
-                                {team.balanceScore && (
+                                {(team as any).balanceScore && (
                                     <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                                         <Award className="w-4 h-4" />
-                                        Balance Score: <span className="font-semibold text-gray-900 dark:text-white">{Math.round(team.balanceScore)}/100</span>
+                                        Balance Score: <span className="font-semibold text-gray-900 dark:text-white">{Math.round((team as any).balanceScore)}/100</span>
                                     </div>
                                 )}
                                 {team.createdAt && (
@@ -512,7 +508,7 @@ function TeamDetailCard({ team, currentUserId, onOpenChat }: { team: TeamWithDet
                 )}
 
                 {/* AI Formation Insight */}
-                {team.aiRationale && (
+                {(team as any).aiRationale && (
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
                         <div className="flex items-start gap-3">
                             <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
@@ -521,7 +517,7 @@ function TeamDetailCard({ team, currentUserId, onOpenChat }: { team: TeamWithDet
                                     Why You Were Matched
                                 </h4>
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                                    {team.aiRationale}
+                                    {(team as any).aiRationale}
                                 </p>
                             </div>
                         </div>
