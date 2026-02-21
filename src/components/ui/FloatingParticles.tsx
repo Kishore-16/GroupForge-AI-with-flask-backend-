@@ -23,7 +23,7 @@ export function FloatingParticles({ count = 20, className = '' }: FloatingPartic
             {particles.map(p => (
                 <div
                     key={p.id}
-                    className="absolute rounded-full bg-primary-500/30 dark:bg-primary-400/20"
+                    className="absolute rounded-full bg-primary-500/20 dark:bg-primary-400/20"
                     style={{
                         width: p.size,
                         height: p.size,
