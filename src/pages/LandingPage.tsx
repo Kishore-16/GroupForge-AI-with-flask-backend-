@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button, ThemeToggle } from '../components/ui';
+import { Hyperspeed } from '../components/effects/Hyperspeed';
+import { useTheme } from '../contexts';
 import {
     Users,
     Brain,
@@ -41,8 +43,19 @@ export function LandingPage() {
         'High-performers carrying disengaged teammates',
     ];
 
+    const { theme } = useTheme();
+
     return (
         <div className="min-h-screen bg-white dark:bg-gray-950">
+            {/* Hyperspeed Background - Only in Dark Mode */}
+            {theme === 'dark' && (
+                <div className="fixed inset-0 z-0">
+                    <Hyperspeed />
+                </div>
+            )}
+
+            {/* Content wrapper */}
+            <div className="relative z-10">
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-950/90 backdrop-blur-md z-50 border-b border-gray-100 dark:border-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,7 +80,7 @@ export function LandingPage() {
             </header>
 
             {/* Hero Section */}
-            <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+            <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-gray-950/0 dark:via-gray-900/0 dark:to-gray-950/0">
                 <div className="max-w-7xl mx-auto text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium mb-6 border border-transparent dark:border-primary-800">
                         <Sparkles className="w-4 h-4" />
@@ -242,6 +255,7 @@ export function LandingPage() {
                     </div>
                 </div>
             </footer>
+            </div>
         </div>
     );
 }

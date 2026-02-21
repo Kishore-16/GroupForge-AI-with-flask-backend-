@@ -16,6 +16,12 @@ except ImportError:
     HAS_PYPDF = False
 
 try:
+    import pdfplumber
+    HAS_PDFPLUMBER = True
+except ImportError:
+    HAS_PDFPLUMBER = False
+
+try:
     from pdf2image import convert_from_bytes
     HAS_PDF2IMAGE = True
 except ImportError:
@@ -39,29 +45,55 @@ def allowed_file(filename: str) -> bool:
 def extract_text_from_pdf(file_content: bytes) -> str:
     """Extract text from PDF file"""
     text = ""
-    
+    errors = []
+
     # Try using pypdf first
     if HAS_PYPDF:
         try:
             pdf_reader = PdfReader(io.BytesIO(file_content))
             for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
             if text.strip():
                 return text
         except Exception as e:
+            errors.append(f"pypdf: {e}")
             print(f"Error extracting text with pypdf: {e}")
-    
-    # Fallback: use pdf2image and OCR
+
+    # Try pdfplumber (pure Python, no external binaries needed)
+    if HAS_PDFPLUMBER:
+        try:
+            with pdfplumber.open(io.BytesIO(file_content)) as pdf:
+                plumber_text = ""
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        plumber_text += page_text + "\n"
+            if plumber_text.strip():
+                return plumber_text
+        except Exception as e:
+            errors.append(f"pdfplumber: {e}")
+            print(f"Error extracting text with pdfplumber: {e}")
+
+    # Fallback: use pdf2image and OCR (requires Poppler + Tesseract binaries)
     if HAS_PDF2IMAGE and HAS_PYTESSERACT:
         try:
             images = convert_from_bytes(file_content)
             for image in images:
                 text += pytesseract.image_to_string(image) + "\n"
-            return text
+            if text.strip():
+                return text
         except Exception as e:
+            errors.append(f"pdf2image/pytesseract: {e}")
             print(f"Error extracting text with pdf2image/pytesseract: {e}")
-    
-    raise Exception("Unable to extract text from PDF. Please ensure pdf2image and pytesseract are installed.")
+
+    error_detail = "; ".join(errors) if errors else "No PDF parsers available"
+    raise Exception(
+        f"Unable to extract text from PDF. "
+        f"Install 'pdfplumber' for best results (pip install pdfplumber). "
+        f"Details: {error_detail}"
+    )
 
 
 def extract_text_from_image(file_content: bytes) -> str:
@@ -176,7 +208,7 @@ IMPORTANT: Return ONLY valid JSON, no other text. If a field is not found in the
         }
         
         payload = {
-            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "model": "nvidia/nemotron-3-nano-30b-a3b:free",
             "messages": [
                 {
                     "role": "user",

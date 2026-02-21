@@ -48,8 +48,10 @@ def upload_resume():
         resume_data = process_resume_file(file)
         
         # Build the response with the expected format
-        detected_skills = resume_data.get('skills', [])
-        detected_tools = resume_data.get('technical_skills', [])
+        # 'technical_skills' from AI = programming languages/tools → displayed as Skills (with proficiency)
+        # 'skills' from AI = soft/general skills → displayed as Tools & Technologies
+        detected_skills = resume_data.get('technical_skills', [])
+        detected_tools = resume_data.get('skills', [])
         
         # Create confidence scores for each skill/tool
         confidence_scores = {}

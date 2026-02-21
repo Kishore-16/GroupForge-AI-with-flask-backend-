@@ -1,7 +1,10 @@
 # Environment variables (a.k.a. secrets waiting to leak)
 .env
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 338e516ad097211a47058b5f9367ac08fc4809af
 
 node_modules/
 npm-debug.log*

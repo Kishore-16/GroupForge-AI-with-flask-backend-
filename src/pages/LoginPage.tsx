@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts';
+import { useTheme } from '../contexts';
 import { Button, Input, Card, CardBody, ThemeToggle } from '../components/ui';
+import { Hyperspeed } from '../components/effects/Hyperspeed';
 import { Users, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export function LoginPage() {
@@ -57,14 +59,23 @@ export function LoginPage() {
         }
     };
 
+    const { theme } = useTheme();
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative">
+            {/* Hyperspeed Background - Only in Dark Mode */}
+            {theme === 'dark' && (
+                <div className="fixed inset-0 z-0">
+                    <Hyperspeed />
+                </div>
+            )}
+
             {/* Theme Toggle */}
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 z-20">
                 <ThemeToggle />
             </div>
 
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md relative z-10">
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl mb-4 shadow-lg shadow-primary-500/20">
