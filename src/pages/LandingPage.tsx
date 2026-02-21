@@ -53,20 +53,70 @@ function StatCard({ value, suffix, label, icon: Icon, delay = 0 }: { value: numb
     );
 }
 
-/* ── Meteors decoration (dark mode) ────────────────────── */
+/* ── Meteors decoration ─────────────────────────────────── */
 function Meteors({ count = 6 }: { count?: number }) {
+    const { theme } = useTheme();
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={i}
-                    className="meteor hidden dark:block"
+                    className={theme === 'dark' ? 'meteor' : 'meteor-light'}
                     style={{
                         top: `${Math.random() * 40}%`,
                         left: `${50 + Math.random() * 50}%`,
                         '--duration': `${2 + Math.random() * 4}s`,
                         '--delay': `${Math.random() * 8}s`,
-                        opacity: 0.6 + Math.random() * 0.4,
+                        opacity: theme === 'dark' ? 0.6 + Math.random() * 0.4 : 0.3 + Math.random() * 0.3,
+                    } as React.CSSProperties}
+                />
+            ))}
+        </div>
+    );
+}
+
+/* ── Floating orbs for light mode ──────────────────────── */
+function LightOrbs() {
+    const orbs = [
+        { color: 'hsla(221, 83%, 53%, 0.12)', size: 200, top: '10%', left: '15%', duration: '14s', delay: '0s' },
+        { color: 'hsla(280, 65%, 55%, 0.10)', size: 160, top: '60%', left: '70%', duration: '18s', delay: '2s' },
+        { color: 'hsla(142, 71%, 50%, 0.08)', size: 180, top: '30%', left: '80%', duration: '16s', delay: '4s' },
+        { color: 'hsla(250, 70%, 60%, 0.10)', size: 140, top: '70%', left: '20%', duration: '12s', delay: '1s' },
+    ];
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden">
+            {orbs.map((orb, i) => (
+                <div
+                    key={i}
+                    className="light-orb"
+                    style={{
+                        background: orb.color,
+                        width: orb.size,
+                        height: orb.size,
+                        top: orb.top,
+                        left: orb.left,
+                        '--duration': orb.duration,
+                        '--delay': orb.delay,
+                    } as React.CSSProperties}
+                />
+            ))}
+        </div>
+    );
+}
+
+/* ── Sparkles for light mode ───────────────────────────── */
+function SparkleField({ count = 12 }: { count?: number }) {
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden">
+            {Array.from({ length: count }).map((_, i) => (
+                <div
+                    key={i}
+                    className="sparkle-dot"
+                    style={{
+                        top: `${10 + Math.random() * 80}%`,
+                        left: `${5 + Math.random() * 90}%`,
+                        '--duration': `${2 + Math.random() * 3}s`,
+                        '--delay': `${Math.random() * 5}s`,
                     } as React.CSSProperties}
                 />
             ))}
@@ -155,8 +205,11 @@ export function LandingPage() {
                 <section className="relative pt-36 pb-32 px-4 overflow-hidden">
                     {/* Background decorations */}
                     <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-violet-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" />
+                    <div className="absolute inset-0 light-mesh-bg dark:hidden" />
                     <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary-400/10 dark:bg-primary-500/5 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-violet-400/10 dark:bg-violet-500/5 rounded-full blur-3xl" />
+                    <LightOrbs />
+                    <SparkleField count={15} />
                     <Meteors count={8} />
                     <FloatingParticles count={25} />
 
@@ -291,6 +344,7 @@ export function LandingPage() {
 
                 {/* ─── Problem ─── */}
                 <section className="py-28 px-4 relative">
+                    <SparkleField count={8} />
                     <div className="max-w-7xl mx-auto">
                         <RevealSection className="text-center mb-16">
                             <p className="text-sm font-semibold uppercase tracking-widest text-red-500 dark:text-red-400 mb-3">The Problem</p>

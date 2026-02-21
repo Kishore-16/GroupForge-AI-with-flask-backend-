@@ -465,7 +465,7 @@ html.dark {
     box-shadow: 0 0 12px hsla(221, 83%, 53%, 0.4);
 }
 
-/* Meteor decoration */
+/* Meteor decoration — works in both themes */
 .meteor {
     position: absolute;
     width: 2px;
@@ -473,6 +473,66 @@ html.dark {
     background: linear-gradient(to bottom, hsla(221, 83%, 53%, 0.8), transparent);
     border-radius: 999px;
     animation: meteor var(--duration, 3s) linear var(--delay, 0s) infinite;
+}
+
+/* Light-mode meteor uses softer colors */
+.meteor-light {
+    position: absolute;
+    width: 2px;
+    height: 60px;
+    background: linear-gradient(to bottom, hsla(250, 70%, 60%, 0.5), transparent);
+    border-radius: 999px;
+    animation: meteor var(--duration, 4s) linear var(--delay, 0s) infinite;
+}
+
+/* Animated floating orb for light mode */
+@keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(30px, -20px) scale(1.1); }
+    50% { transform: translate(-10px, -40px) scale(0.95); }
+    75% { transform: translate(-30px, -10px) scale(1.05); }
+}
+
+.light-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: orbFloat var(--duration, 12s) ease-in-out var(--delay, 0s) infinite;
+    pointer-events: none;
+}
+
+/* Animated mesh gradient for light hero */
+@keyframes meshShift {
+    0% { background-position: 0% 0%; }
+    25% { background-position: 100% 0%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+.light-mesh-bg {
+    background: 
+        radial-gradient(ellipse at 20% 50%, hsla(221, 83%, 53%, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, hsla(280, 65%, 50%, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, hsla(142, 71%, 45%, 0.06) 0%, transparent 50%);
+    background-size: 200% 200%;
+    animation: meshShift 20s ease-in-out infinite;
+}
+
+/* Light mode sparkle */
+@keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.sparkle-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, hsla(221, 83%, 60%, 0.8), hsla(250, 70%, 60%, 0.4));
+    border-radius: 50%;
+    animation: sparkle var(--duration, 3s) ease-in-out var(--delay, 0s) infinite;
+    pointer-events: none;
 }
 
 /* Stat card with animated border */
