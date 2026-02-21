@@ -11,7 +11,7 @@ import {
     Zap,
     TrendingUp,
     BookOpen,
-    Calendar,
+    
     Brain,
     Sparkles,
     BarChart3,
@@ -504,16 +504,6 @@ function StudentDashboard({ profile }: { profile: StudentProfile }) {
     );
 }
 
-interface CourseData {
-    id: string;
-    name: string;
-    code: string;
-    semester: string;
-    enrolledStudents: string[] | number;
-    teams: string[];
-    status: 'active' | 'archived';
-    createdAt?: any;
-}
 
 function FacultyDashboard() {
     const { userProfile } = useAuth();
@@ -545,7 +535,7 @@ function FacultyDashboard() {
                 setLoading(true);
 
                 // Fetch all required data in parallel
-                const [metaStats, teamsData, eligibleStudentsData] = await Promise.all([
+                const [metaStats, teamsData] = await Promise.all([
                     getMetaStats(),
                     fetchAllTeams(),
                     fetchEligibleStudents()
@@ -1118,20 +1108,4 @@ function AdminDashboard() {
             </div>
         </DashboardLayout>
     );
-}
-
-// Helper function to calculate overall skill level from UserPlan.md schema
-function getOverallLevel(skills: StudentProfile['skills']): string {
-    if (!skills || typeof skills !== 'object') return 'N/A';
-
-    const skillValues = Object.values(skills).filter(v => typeof v === 'number') as number[];
-    if (skillValues.length === 0) return 'N/A';
-
-    const avg = skillValues.reduce((sum, score) => sum + score, 0) / skillValues.length;
-
-    if (avg >= 80) return 'Expert';
-    if (avg >= 60) return 'Advanced';
-    if (avg >= 40) return 'Intermediate';
-    if (avg > 0) return 'Beginner';
-    return 'N/A';
 }

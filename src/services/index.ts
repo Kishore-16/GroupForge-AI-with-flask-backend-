@@ -14,11 +14,11 @@ export {
     type AIFormationResult
 } from './aiTeamFormation';
 
-export * from './resumeParser';
+export { parseResumeText, mergeSkillProfiles } from './resumeParser';
 export * from './githubAnalyzer';
 export * from './metaService';
 export * from './userManagement';
-export * from './resumeService';
+export { uploadResume, getResumeJobStatus } from './resumeService';
 export * from './assessmentApi';
 export * from './api';
 export { default as webSocketService } from './websocketService';

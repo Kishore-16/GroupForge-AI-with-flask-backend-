@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '../../contexts';
-import { X, Bell, CheckCircle, AlertCircle, Users, User } from 'lucide-react';
+import { X, Bell, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface Notification {
     id: string;
@@ -60,7 +60,7 @@ export function RealTimeNotifications({
         });
 
         // Handle profile update notifications
-        onProfileUpdate((data) => {
+        onProfileUpdate((_data) => {
             addNotification({
                 type: 'info',
                 title: 'Profile Updated',

@@ -5,17 +5,17 @@
 import OpenAI from "openai";
 
 // Validate API Key at startup (important for debugging)
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || 'dummy-key-not-set';
 
-if (!GROQ_API_KEY) {
-    console.error("❌ VITE_GROQ_API_KEY is missing. Please set it in your .env file.");
+if (!import.meta.env.VITE_GROQ_API_KEY) {
+    console.warn("⚠️ VITE_GROQ_API_KEY is missing. Groq features will not work.");
 }
 
 // Initialize Groq client using OpenAI SDK with custom base URL
 export const groqClient = new OpenAI({
     apiKey: GROQ_API_KEY,
     baseURL: "https://api.groq.com/openai/v1",
-    dangerouslyAllowBrowser: true, // ⚠️ Only for development / hackathon
+    dangerouslyAllowBrowser: true,
 });
 
 // Type for options

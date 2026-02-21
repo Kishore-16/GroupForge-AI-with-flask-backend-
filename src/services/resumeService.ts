@@ -53,7 +53,7 @@ export async function getResumeJobStatus(jobId: string): Promise<ResumeJobStatus
  * Alternative function for extracting text and skills from a resume
  * Can be used for preview/validation before submitting
  */
-export async function parseResumeText(text: string): Promise<Partial<ResumeParsedData>> {
+export async function parseResumeText(_text: string): Promise<Partial<ResumeUploadResponse['data']>> {
     // This would call a backend endpoint to parse resume text directly
     // For now, we'll use the upload endpoint which handles file parsing
     return {};
