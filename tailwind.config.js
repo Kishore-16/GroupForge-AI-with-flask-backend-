@@ -1,3 +1,16 @@
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const flattenColorPalette = require('tailwindcss/lib/util/flattenColorPalette').default;
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+function addVariablesForColors({ addBase, theme }) {
+    let allColors = flattenColorPalette(theme('colors'));
+    let newVars = Object.fromEntries(
+        Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+    );
+    addBase({ ':root': newVars });
+}
+
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: 'class',
@@ -70,7 +83,7 @@ export default {
                 'float': 'float 4s ease-in-out infinite',
                 'glow-pulse': 'glowPulse 3s ease-in-out infinite',
                 'gradient-shift': 'gradientShift 4s ease infinite',
-                'aurora': 'aurora 15s ease-in-out infinite',
+                'aurora': 'aurora 60s linear infinite',
                 'shimmer': 'shimmer 1.5s ease-in-out infinite',
                 'draw-line': 'drawLine 1s ease-out both',
                 'orbit': 'orbit 20s linear infinite',
@@ -133,10 +146,8 @@ export default {
                     '100%': { backgroundPosition: '0% 50%' },
                 },
                 aurora: {
-                    '0%, 100%': { backgroundPosition: '0% 50%' },
-                    '25%': { backgroundPosition: '50% 100%' },
-                    '50%': { backgroundPosition: '100% 50%' },
-                    '75%': { backgroundPosition: '50% 0%' },
+                    from: { backgroundPosition: '50% 50%, 50% 50%' },
+                    to: { backgroundPosition: '350% 50%, 350% 50%' },
                 },
                 shimmer: {
                     '0%': { backgroundPosition: '-200% 0' },
@@ -160,5 +171,5 @@ export default {
             },
         },
     },
-    plugins: [],
+    plugins: [addVariablesForColors],
 }

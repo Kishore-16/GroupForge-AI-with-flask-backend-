@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button, ThemeToggle, FloatingParticles, AnimatedGradientText } from '../components/ui';
+import { AuroraBackground } from '../components/ui/aurora-background';
 import { Hyperspeed } from '../components/effects/Hyperspeed';
 import { useTheme } from '../contexts';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
@@ -75,55 +76,6 @@ function Meteors({ count = 6 }: { count?: number }) {
     );
 }
 
-/* ── Floating orbs for light mode ──────────────────────── */
-function LightOrbs() {
-    const orbs = [
-        { color: 'hsla(221, 83%, 53%, 0.12)', size: 200, top: '10%', left: '15%', duration: '14s', delay: '0s' },
-        { color: 'hsla(280, 65%, 55%, 0.10)', size: 160, top: '60%', left: '70%', duration: '18s', delay: '2s' },
-        { color: 'hsla(142, 71%, 50%, 0.08)', size: 180, top: '30%', left: '80%', duration: '16s', delay: '4s' },
-        { color: 'hsla(250, 70%, 60%, 0.10)', size: 140, top: '70%', left: '20%', duration: '12s', delay: '1s' },
-    ];
-    return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden">
-            {orbs.map((orb, i) => (
-                <div
-                    key={i}
-                    className="light-orb"
-                    style={{
-                        background: orb.color,
-                        width: orb.size,
-                        height: orb.size,
-                        top: orb.top,
-                        left: orb.left,
-                        '--duration': orb.duration,
-                        '--delay': orb.delay,
-                    } as React.CSSProperties}
-                />
-            ))}
-        </div>
-    );
-}
-
-/* ── Sparkles for light mode ───────────────────────────── */
-function SparkleField({ count = 12 }: { count?: number }) {
-    return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden">
-            {Array.from({ length: count }).map((_, i) => (
-                <div
-                    key={i}
-                    className="sparkle-dot"
-                    style={{
-                        top: `${10 + Math.random() * 80}%`,
-                        left: `${5 + Math.random() * 90}%`,
-                        '--duration': `${2 + Math.random() * 3}s`,
-                        '--delay': `${Math.random() * 5}s`,
-                    } as React.CSSProperties}
-                />
-            ))}
-        </div>
-    );
-}
-
 /* ═══════════════════════════════════════════════════════ */
 export function LandingPage() {
     const { theme } = useTheme();
@@ -170,10 +122,22 @@ export function LandingPage() {
 
     return (
         <div className="min-h-screen bg-white dark:bg-gray-950 overflow-hidden">
-            {/* Hyperspeed Background */}
+            {/* Hyperspeed Background — dark mode */}
             {theme === 'dark' && (
                 <div className="fixed inset-0 z-0">
                     <Hyperspeed />
+                </div>
+            )}
+
+            {/* Aurora Background — light mode */}
+            {theme !== 'dark' && (
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <AuroraBackground
+                        className="h-full w-full bg-white"
+                        showRadialGradient={true}
+                    >
+                        <div />
+                    </AuroraBackground>
                 </div>
             )}
 
@@ -204,12 +168,9 @@ export function LandingPage() {
                 {/* ─── Hero ─── */}
                 <section className="relative pt-40 pb-36 px-4 overflow-hidden">
                     {/* Background decorations */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-violet-50 dark:from-slate-950 dark:via-purple-950/30 dark:to-slate-950" />
-                    <div className="absolute inset-0 light-mesh-bg dark:hidden" />
+                    <div className="absolute inset-0 dark:bg-gradient-to-br dark:from-slate-950 dark:via-purple-950/30 dark:to-slate-950" />
                     <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary-400/10 dark:bg-primary-600/8 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-violet-400/10 dark:bg-purple-600/8 rounded-full blur-3xl" />
-                    <LightOrbs />
-                    <SparkleField count={15} />
                     <Meteors count={8} />
                     <FloatingParticles count={25} />
 
@@ -344,7 +305,6 @@ export function LandingPage() {
 
                 {/* ─── Problem ─── */}
                 <section className="py-28 px-4 relative">
-                    <SparkleField count={8} />
                     <div className="max-w-7xl mx-auto">
                         <RevealSection className="text-center mb-16">
                             <p className="text-sm font-semibold uppercase tracking-widest text-red-500 dark:text-red-400 mb-3">The Problem</p>

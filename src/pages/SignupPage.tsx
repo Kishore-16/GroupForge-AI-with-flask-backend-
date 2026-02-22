@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts';
 import { useTheme } from '../contexts';
 import { Button, Input, Card, CardBody, ThemeToggle } from '../components/ui';
+import { AuroraBackground } from '../components/ui/aurora-background';
 import { Hyperspeed } from '../components/effects/Hyperspeed';
 import { Users, ArrowRight, GraduationCap, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { UserRole } from '../types';
@@ -94,11 +95,20 @@ export function SignupPage() {
     const { theme } = useTheme();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative">
+        <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center p-4 relative">
             {/* Hyperspeed Background - Only in Dark Mode */}
             {theme === 'dark' && (
                 <div className="fixed inset-0 z-0">
                     <Hyperspeed />
+                </div>
+            )}
+
+            {/* Aurora Background - Only in Light Mode */}
+            {theme !== 'dark' && (
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <AuroraBackground className="h-full w-full bg-white" showRadialGradient={true}>
+                        <div />
+                    </AuroraBackground>
                 </div>
             )}
 
