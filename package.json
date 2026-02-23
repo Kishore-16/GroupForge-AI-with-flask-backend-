@@ -13,7 +13,6 @@
         "@google/generative-ai": "^0.21.0",
         "clsx": "^2.1.1",
         "framer-motion": "^12.34.3",
-        "lovable-tagger": "^1.1.13",
         "lucide-react": "^0.460.0",
         "openai": "^6.15.0",
         "postprocessing": "^6.38.2",
